@@ -3,187 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piyami LifeOS - Finans Rehberi</title>
+    <title>Piyami LifeOS Finans</title>
     <style>
-        :root {
-            --primary-color: #1a73e8;
-            --secondary-color: #34a853;
-            --bg-color: #f8f9fa;
-            --text-color: #202124;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            width: 100%;
-            padding: 1.5rem 0;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .container {
-            max-width: 800px;
-            width: 90%;
-            margin: 2rem auto;
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        }
-        .asistan-box {
-            border-left: 5px solid var(--secondary-color);
-            background: #e6f4ea;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border-radius: 0 10px 10px 0;
-            min-height: 80px;
-        }
-        .market-card {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        .ticker {
-            padding: 1rem;
-            border: 1px solid #eee;
-            border-radius: 12px;
-            text-align: center;
-            background: #fff;
-        }
-        .price { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); margin-top: 5px; }
-        textarea {
-            width: 100%;
-            height: 120px;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-            padding: 15px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            resize: vertical;
-            margin-top: 1rem;
-        }
-        .cta-button {
-            background-color: var(--secondary-color);
-            color: white;
-            padding: 15px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            font-size: 1.1rem;
-            margin-top: 10px;
-        }
-        .cta-button:disabled { background-color: #ccc; }
-        .footer {
-            margin-top: auto;
-            padding: 1.5rem;
-            font-size: 0.8rem;
-            color: #70757a;
-            text-align: center;
-        }
+        body { font-family: sans-serif; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; padding: 20px; color: #333; }
+        .container { background: white; max-width: 600px; width: 100%; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; text-align: center; }
+        .box { background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #1a73e8; }
+        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; resize: vertical; }
+        button { width: 100%; background: #34a853; color: white; padding: 15px; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:disabled { background: #ccc; }
+        .footer { margin-top: 20px; font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Piyami LifeOS Finans</h1>
-    <p>Dostunuzdan Samimi ve Dürüst Analizler</p>
-</header>
-
 <div class="container">
-    <div class="asistan-box" id="asistanCevap">
-        <h3 id="asistanBaslik">Piyami LifeOS:</h3>
-        <p id="asistanMetin">Hoş geldin Piyami Bey. Finans dünyasında güvenli bir yolculuk için aklındaki soruyu buraya bırakabilirsin. Senin için küresel verileri taramaya hazırım.</p>
+    <h1>Piyami LifeOS</h1>
+    
+    <div class="box">
+        <strong>Asistan Yanıtı:</strong>
+        <p id="cevapAlani">Merhaba Piyami Bey. Finansal analiz için emrinizdeyim.</p>
     </div>
 
-    <div class="market-card">
-        <div class="ticker">
-            <strong>USD / TRY</strong><br>
-            <div id="usd-try" class="price">...</div>
-        </div>
-        <div class="ticker">
-            <strong>EUR / USD</strong><br>
-            <div id="eur-usd" class="price">...</div>
-        </div>
-        <div class="ticker">
-            <strong>BTC / USD</strong><br>
-            <div id="btc-usd" class="price">Canlı</div>
-        </div>
-    </div>
-
-    <textarea id="userInput" placeholder="Örn: Forex altın yatırımı için Piyami LifeOS ne tavsiye eder?"></textarea>
-    <button id="sendBtn" class="cta-button" onclick="analizEt()">Piyami LifeOS'a Sor</button>
+    <textarea id="soruInput" placeholder="Soru sor (Örn: Altın düşer mi?)"></textarea>
+    <button id="btn" onclick="soruSor()">Piyami Bey Adına Sor</button>
 </div>
 
-<div class="footer">
-    Moto G73 5G | LifeOS Dostluk ve Dürüstlük Platformu
-</div>
+<div class="footer">Moto G73 5G | LifeOS Sistemleri</div>
 
 <script>
-    // Piyasaları Güncelle
-    async function updatePrices() {
-        try {
-            const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-            const data = await res.json();
-            document.getElementById('usd-try').innerText = data.rates.TRY.toFixed(2) + " ₺";
-            document.getElementById('eur-usd').innerText = (1 / data.rates.EUR).toFixed(4) + " $";
-        } catch (e) {
-            console.log("Fiyat çekilemedi.");
-        }
-    }
-    updatePrices();
+    async function soruSor() {
+        const soru = document.getElementById("soruInput").value;
+        const cevapKutu = document.getElementById("cevapAlani");
+        const buton = document.getElementById("btn");
 
-    // Piyami LifeOS Analiz Fonksiyonu
-    async function analizEt() {
-        const input = document.getElementById('userInput').value;
-        const asistanMetin = document.getElementById('asistanMetin');
-        const asistanBaslik = document.getElementById('asistanBaslik');
-        const btn = document.getElementById('sendBtn');
-        
-        if (input.length < 2) {
-            alert("Lütfen bir soru yazın Piyami Bey.");
-            return;
-        }
+        if (!soru) return alert("Boş soru sorulmaz dostum!");
 
-        // Arayüz Hazırlığı
-        asistanBaslik.innerText = "Piyami LifeOS Düşünüyor...";
-        asistanMetin.innerText = "Senin için küresel piyasaları ve verileri inceliyorum Piyami Bey. Lütfen bekleyin...";
-        btn.disabled = true;
+        cevapKutu.innerText = "Piyami LifeOS analiz yapıyor...";
+        buton.disabled = true;
 
         try {
-            // Senin server.js mantığına uygun POST çağrısı
-            const response = await fetch('/api/chat', {
+            const req = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    question: input,
-                    history: [] // İhtiyaç duyarsan burayı doldurabiliriz
-                })
+                body: JSON.stringify({ question: soru })
             });
 
-            const data = await response.json();
-            
-            if (data.answer) {
-                asistanBaslik.innerText = "Piyami LifeOS Analizi:";
-                // Gelen yanıtı satır sonlarına göre düzenle
-                asistanMetin.innerHTML = data.answer.replace(/\n/g, "<br>");
-            } else {
-                asistanMetin.innerText = "Üzgünüm Piyami Bey, Google API'den beklenen yanıt gelmedi.";
-            }
-        } catch (error) {
-            asistanMetin.innerText = "Bağlantıda bir aksaklık oldu dostum. Vercel Logs kısmını kontrol edebiliriz.";
+            const res = await req.json();
+            cevapKutu.innerText = res.answer || "Hata: Cevap alınamadı.";
+        } catch (err) {
+            cevapKutu.innerText = "Bağlantı hatası oluştu.";
         } finally {
-            btn.disabled = false;
+            buton.disabled = false;
         }
     }
 </script>
