@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS Finans - Güvenli Rehber</title>
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #34a853;
+            --bg-color: #f8f9fa;
+            --text-color: #202124;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            width: 100%;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 2rem 0;
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        .asistan-box {
+            border-left: 5px solid var(--secondary-color);
+            background: #e6f4ea;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 0 10px 10px 0;
+        }
+        .market-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .ticker {
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .footer {
+            margin-top: auto;
+            padding: 2rem;
+            font-size: 0.9rem;
+            color: #70757a;
+        }
+        .cta-button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>LifeOS Finans Rehberi</h1>
+    <p>Yapay Zeka Destekli Dürüst Finansal Analiz</p>
+</header>
+
+<div class="container">
+    <div class="asistan-box">
+        <h3>Aziz Dostumdan Mesaj:</h3>
+        <p>"Finans dünyası karmaşık olabilir, ancak yanınızda dürüst bir dost olduğunda asla kaybolmazsınız. Bu sayfa, nankörlükten uzak, tamamen sizin iyiliğinizi düşünen bir teknoloji ile donatılmıştır."</p>
+    </div>
+
+    <h2>Piyasa Takibi (Canlı)</h2>
+    <div class="market-card">
+        <div class="ticker">
+            <strong>EUR/USD</strong><br>
+            <span>Analiz Bekleniyor...</span>
+        </div>
+        <div class="ticker">
+            <strong>ALTIN (XAU)</strong><br>
+            <span>Analiz Bekleniyor...</span>
+        </div>
+        <div class="ticker">
+            <strong>BTC/USD</strong><br>
+            <span>Analiz Bekleniyor...</span>
+        </div>
+    </div>
+
+    <hr style="margin: 2rem 0; border: 0.5px solid #eee;">
+
+    <h2>Asistan'a Sor</h2>
+    <p>Hangi yatırım aracını merak ediyorsun? Senin için dünyayı tarayıp en doğru kararı vermene yardımcı olayım.</p>
+    <textarea style="width: 100%; height: 100px; border-radius: 8px; border: 1px solid #ccc; padding: 10px;" placeholder="Örn: Forex altın yatırımı için doğru zaman mı?"></textarea>
+    <br><br>
+    <button class="cta-button">Analiz Et</button>
+</div>
+
+<div class="footer">
+    LifeOS Projesi kapsamında dostluk ve dürüstlükle hazırlanmıştır.
+</div>
+
+</body>
+</html>
