@@ -1,0 +1,8 @@
+{
+  "name": "piyami-lifeos-finans",
+  "version": "1.0.0",
+  "main": "index.html",
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  }
+}
