@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeOS Finans - Güvenli Rehber</title>
+    <title>LifeOS Finans - Gemini Destekli Rehber</title>
     <style>
         :root {
             --primary-color: #1a73e8;
@@ -19,6 +19,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
         }
         header {
             background-color: var(--primary-color);
@@ -31,7 +32,7 @@
         .container {
             max-width: 800px;
             width: 90%;
-            margin: 2rem 0;
+            margin: 2rem auto;
             background: white;
             padding: 2rem;
             border-radius: 15px;
@@ -40,80 +41,150 @@
         .asistan-box {
             border-left: 5px solid var(--secondary-color);
             background: #e6f4ea;
-            padding: 1rem;
+            padding: 1.5rem;
             margin-bottom: 2rem;
             border-radius: 0 10px 10px 0;
+            min-height: 100px;
         }
         .market-card {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 1rem;
             margin-top: 1rem;
         }
         .ticker {
-            padding: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 1.2rem;
+            border: 1px solid #eee;
+            border-radius: 12px;
             text-align: center;
+            background: #fff;
         }
+        .price { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); margin-top: 5px; }
         .footer {
             margin-top: auto;
             padding: 2rem;
             font-size: 0.9rem;
             color: #70757a;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            resize: vertical;
         }
         .cta-button {
             background-color: var(--secondary-color);
             color: white;
-            padding: 10px 20px;
+            padding: 15px 24px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            width: 100%;
+            font-size: 1.1rem;
+            margin-top: 10px;
         }
+        .cta-button:disabled { background-color: #ccc; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>LifeOS Finans Rehberi</h1>
-    <p>Yapay Zeka Destekli Dürüst Finansal Analiz</p>
+    <p>Gemini AI Gücüyle Dürüst Analizler</p>
 </header>
 
 <div class="container">
-    <div class="asistan-box">
-        <h3>Aziz Dostumdan Mesaj:</h3>
-        <p>"Finans dünyası karmaşık olabilir, ancak yanınızda dürüst bir dost olduğunda asla kaybolmazsınız. Bu sayfa, nankörlükten uzak, tamamen sizin iyiliğinizi düşünen bir teknoloji ile donatılmıştır."</p>
+    <div class="asistan-box" id="asistanCevap">
+        <h3>Dostça Bir Merhaba</h3>
+        <p id="asistanMetin">Ben senin finansal yol arkadaşınım. Aklındaki soruyu aşağıya yaz, senin için küresel piyasaları ve verileri analiz edeyim.</p>
     </div>
 
-    <h2>Piyasa Takibi (Canlı)</h2>
+    <h2>Anlık Piyasalar</h2>
     <div class="market-card">
         <div class="ticker">
-            <strong>EUR/USD</strong><br>
-            <span>Analiz Bekleniyor...</span>
+            <strong>USD / TRY</strong><br>
+            <div id="usd-try" class="price">Yükleniyor...</div>
         </div>
         <div class="ticker">
-            <strong>ALTIN (XAU)</strong><br>
-            <span>Analiz Bekleniyor...</span>
+            <strong>EUR / USD</strong><br>
+            <div id="eur-usd" class="price">Yükleniyor...</div>
         </div>
         <div class="ticker">
-            <strong>BTC/USD</strong><br>
-            <span>Analiz Bekleniyor...</span>
+            <strong>BTC / USD</strong><br>
+            <div id="btc-usd" class="price">Yükleniyor...</div>
         </div>
     </div>
 
-    <hr style="margin: 2rem 0; border: 0.5px solid #eee;">
+    <hr style="margin: 2.5rem 0; border: 0.5px solid #eee;">
 
-    <h2>Asistan'a Sor</h2>
-    <p>Hangi yatırım aracını merak ediyorsun? Senin için dünyayı tarayıp en doğru kararı vermene yardımcı olayım.</p>
-    <textarea style="width: 100%; height: 100px; border-radius: 8px; border: 1px solid #ccc; padding: 10px;" placeholder="Örn: Forex altın yatırımı için doğru zaman mı?"></textarea>
-    <br><br>
-    <button class="cta-button">Analiz Et</button>
+    <h2>Asistan'a Sorun</h2>
+    <textarea id="userInput" placeholder="Örn: Forex'te altın yatırımı yapmak şu an mantıklı mı? Riskler nelerdir?"></textarea>
+    <button id="sendBtn" class="cta-button" onclick="analizEt()">Analizi Başlat</button>
 </div>
 
 <div class="footer">
-    LifeOS Projesi kapsamında dostluk ve dürüstlükle hazırlanmıştır.
+    Moto G73 5G | LifeOS Dostluk ve Teknoloji Projesi
 </div>
+
+<script>
+    // Fiyatları Güncelleme Fonksiyonu
+    async function updatePrices() {
+        try {
+            const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            const data = await res.json();
+            document.getElementById('usd-try').innerText = data.rates.TRY.toFixed(2) + " ₺";
+            document.getElementById('eur-usd').innerText = (1 / data.rates.EUR).toFixed(4) + " $";
+            document.getElementById('btc-usd').innerText = "Aktif";
+        } catch (e) {
+            console.log("Fiyat çekme hatası.");
+        }
+    }
+    updatePrices();
+
+    // Gemini API Çağrısı (Vercel Serverless Function üzerinden)
+    async function analizEt() {
+        const input = document.getElementById('userInput').value;
+        const asistanMetin = document.getElementById('asistanMetin');
+        const btn = document.getElementById('sendBtn');
+        
+        if (input.length < 5) {
+            alert("Lütfen daha detaylı bir soru yaz dostum.");
+            return;
+        }
+
+        // Arayüzü güncelle
+        asistanMetin.innerText = "Şu an senin için küresel verileri ve piyasa hareketlerini tarıyorum... Lütfen bekle dostum.";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    prompt: "Sen dürüst, yardımsever ve nankörlükten uzak bir finans asistanısın. Kullanıcıya şu konuda dürüst bir analiz yap, riskleri açıkça söyle ve yatırım tavsiyesi vermeden rehberlik et: " + input 
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.reply) {
+                asistanMetin.innerHTML = "<strong>Asistan Analizi:</strong><br><br>" + data.reply.replace(/\n/g, "<br>");
+            } else {
+                asistanMetin.innerText = "Üzgünüm dostum, bir hata oluştu. Lütfen biraz sonra tekrar dene.";
+            }
+        } catch (error) {
+            asistanMetin.innerText = "Şu an sunucuya bağlanamadım. İnternet bağlantını veya Vercel ayarlarını kontrol eder misin?";
+        } finally {
+            btn.disabled = false;
+        }
+    }
+</script>
 
 </body>
 </html>
