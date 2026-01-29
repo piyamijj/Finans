@@ -1,10 +1,13 @@
 {
-  "name": "lifeos-finans",
+  "name": "lifeos-finans-gemini",
   "version": "1.0.0",
+  "description": "LifeOS Finans Rehberi Gemini Entegrasyonu",
+  "main": "api/gemini-ask.js",
   "scripts": {
-    "start": "node api/chat.js"
+    "start": "node api/gemini-ask.js"
   },
-  "engines": {
-    "node": "24.x"
+  "dependencies": {
+    "@google/generative-ai": "^0.1.0",
+    "dotenv": "^16.3.1"
   }
 }
