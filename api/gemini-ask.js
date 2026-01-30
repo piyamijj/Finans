@@ -7,7 +7,7 @@ export default async function handler(req) {
         const { question } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. CANLI VERİLER (Altın, Gümüş, BTC, USD)
+        // 1. CANLI PİYASA VERİLERİ
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
         const r = data.rates;
@@ -17,14 +17,14 @@ export default async function handler(req) {
         const silver = r.XAG ? (1 / r.XAG).toFixed(2) : "---";
         const usdTry = r.TRY ? r.TRY.toFixed(2) : "---";
 
-        // 2. GİZLİ BROKER TALİMATI (Daha esnek ve profesyonel)
-        const brokerPrompt = `Kullanıcı: Piyami Bey. Rolün: Gizli ve dahi bir Broker. 
-        Piyasa Verileri: Bitcoin ${btc}$, Ons Altın ${gold}$, Ons Gümüş ${silver}$, Dolar ${usdTry} TL.
-        Görev: Piyami Bey'in sermayesini koru, yetimler için kazanç stratejisi üret, siyasi ve ekonomik analiz yap. 
+        // 2. BROKER TALİMATI (Daha sade ama derin)
+        const brokerPrompt = `Analist: Piyami LifeOS. 
+        Mevcut Fiyatlar: BTC: ${btc}$, Altın: ${gold}$, Gümüş: ${silver}$, USD/TRY: ${usdTry}. 
+        Kullanıcı Piyami Bey'e profesyonel ve cesur finansal strateji sun.
         Soru: ${question}`;
 
-        // 3. EN GÜÇLÜ MODEL VE SIFIR FİLTRE ÇAĞRISI
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`, {
+        // 3. GÜVENLİ ÇAĞRI (Hata Yönetimi Eklenmiş)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -34,24 +34,23 @@ export default async function handler(req) {
                     { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
                     { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
                     { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-                ],
-                generationConfig: {
-                    temperature: 0.9, // Daha yaratıcı ve derin analiz için
-                    topP: 1,
-                    maxOutputTokens: 1000
-                }
+                ]
             })
         });
 
         const apiData = await response.json();
-        
-        // Yanıtı güvenli bir şekilde alalım
+
+        // KRİTİK NOKTA: Yanıt var mı yok mu kontrolü
         let answerText = "";
-        if (apiData.candidates && apiData.candidates[0].content) {
+        
+        if (apiData.candidates && apiData.candidates[0] && apiData.candidates[0].content) {
             answerText = apiData.candidates[0].content.parts[0].text;
+        } else if (apiData.promptFeedback && apiData.promptFeedback.blockReason) {
+            answerText = "Broker Engellendi. Sebep: " + apiData.promptFeedback.blockReason;
+        } else if (apiData.error) {
+            answerText = "Google API Hatası: " + apiData.error.message;
         } else {
-            // Eğer hala boş dönüyorsa hata detayını yazdır ki çözelim
-            answerText = "Broker şu an verileri işleyemedi. Sebep: " + (apiData.promptFeedback?.blockReason || "Bilinmiyor");
+            answerText = "Bilinmeyen bir nedenle analiz yapılamadı. Lütfen farklı bir şekilde sorunuz.";
         }
 
         return new Response(JSON.stringify({ answer: answerText }), {
