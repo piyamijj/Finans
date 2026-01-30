@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS Finans - Güvenli Rehber</title>
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #34a853;
+            --bg-color: #f8f9fa;
+            --text-color: #202124;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            width: 100%;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 2rem 0;
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            flex-grow: 1;
+        }
+        .asistan-box {
+            border-left: 5px solid var(--secondary-color);
+            background: #e6f4ea;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 0 10px 10px 0;
+        }
+        .market-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .ticker {
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .result-box {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .footer {
+            margin-top: auto;
+            padding: 2rem;
+            font-size: 0.9rem;
+            color: #70757a;
+            width: 100%;
+            text-align: center;
+        }
+        .cta-button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .cta-button:hover {
+            background-color: #28a745;
+        }
+        .loading-spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>LifeOS Finans Rehberi</h1>
+    <p>Yapay Zeka Destekli Dürüst Finansal Analiz</p>
+</header>
+
+<div class="container">
+    <div class="asistan-box">
+        <h3>Aziz Dostumdan Mesaj:</h3>
+        <p>"Finans dünyası karmaşık olabilir, ancak yanınızda dürüst bir dost olduğunda asla kaybolmazsınız. Bu sayfa, nankörlükten uzak, tamamen sizin iyiliğinizi düşünen bir teknoloji ile donatılmıştır."</p>
+    </div>
+
+    <h2>Piyasa Takibi (Canlı)</h2>
+    <div class="market-card">
+        <div class="ticker">
+            <strong>EUR/USD</strong><br>
+            <span>Analiz Bekleniyor...</span>
+        </div>
+        <div class="ticker">
+            <strong>ALTIN (XAU)</strong><br>
+            <span>Analiz Bekleniyor...</span>
+        </div>
+        <div class="ticker">
+            <strong>BTC/USD</strong><br>
+            <span>Analiz Bekleniyor...</span>
+        </div>
+    </div>
+
+    <hr style="margin: 2rem 0; border: 0.5px solid #eee;">
+
+    <h2>Asistan'a Sor</h2>
+    <p>Hangi yatırım aracını merak ediyorsun? Senin için dünyayı tarayıp en doğru kararı vermene yard��mcı olayım.</p>
+    <textarea id="promptInput" style="width: 100%; height: 100px; border-radius: 8px; border: 1px solid #ccc; padding: 10px;" placeholder="Örn: Forex altın yatırımı için doğru zaman mı?"></textarea>
+    <br><br>
+    <button id="analyzeButton" class="cta-button">Analiz Et <span class="loading-spinner" id="spinner"></span></button>
+
+    <div id="resultBox" class="result-box" style="display: none;">
+        <h3>Analiz Sonucu:</h3>
+        <p id="analysisResult"></p>
+    </div>
+</div>
+
+<div class="footer">
+    <p>Belkide iyi bir Dostluğun Başlangıcı düzgün Ticaret ile başlar.</p>
+</div>
+
+<script>
+    document.getElementById('analyzeButton').addEventListener('click', async () => {
+        const promptInput = document.getElementById('promptInput');
+        const analysisResult = document.getElementById('analysisResult');
+        const resultBox = document.getElementById('resultBox');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const spinner = document.getElementById('spinner');
+
+        const prompt = promptInput.value.trim();
+
+        if (prompt === "") {
+            alert("Lütfen bir soru girin.");
+            return;
+        }
+
+        analyzeButton.disabled = true;
+        spinner.style.display = 'inline-block';
+        analysisResult.textContent = 'Analiz ediliyor...';
+        resultBox.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/gemini-ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                analysisResult.textContent = data.analysis;
+            } else {
+                analysisResult.textContent = `Hata: ${data.error || 'Bilinmeyen bir hata oluştu.'}`;
+                console.error("API Hatası:", data.details || data.error);
+            }
+
+        } catch (error) {
+            analysisResult.textContent = 'API ile iletişimde bir sorun oluştu.';
+            console.error("Network Hatası:", error);
+        } finally {
+            analyzeButton.disabled = false;
+            spinner.style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>
