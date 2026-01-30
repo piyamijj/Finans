@@ -26,7 +26,7 @@ export default async function handler(req) {
 
         // BROKER TALİMATI: İRAN VE TÜRKİYE KIYASLAMALI
         const brokerPrompt = `
-        KİMLİK: Sen Piyami LifeOS'sun. Piyami Bey şu an İran'da. Sen onun bölgesel strateji uzmanı ve broker'ısın.
+        KİMLİK: Sen LifeOS'sun. Ali Bey şu an İran'da. Sen onun bölgesel strateji uzmanı ve broker'ısın.
         GÖREV: Sadece Türkiye değil, İran ve küresel piyasalar arasındaki "arbitraj" ve "devalüasyon" risklerini analiz et. 
         
         GÜNCEL VERİLER:
@@ -56,7 +56,7 @@ export default async function handler(req) {
         });
 
         const apiData = await response.json();
-        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Veri akışında bir kesinti var Piyami Bey, hemen toparlıyorum.";
+        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Veri akışında bir kesinti var Ali Bey, hemen toparlıyorum.";
 
         return new Response(JSON.stringify({ answer: answerText }), {
             headers: { 'Content-Type': 'application/json' }
