@@ -7,7 +7,6 @@ export default async function handler(req) {
         const { question } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. CANLI PİYASA VERİLERİ
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
         const r = data.rates;
@@ -16,15 +15,24 @@ export default async function handler(req) {
         const gold = r.XAU ? (1 / r.XAU).toFixed(2) : "---";
         const silver = r.XAG ? (1 / r.XAG).toFixed(2) : "---";
         const usdTry = r.TRY ? r.TRY.toFixed(2) : "---";
+        const gramGold = (r.XAU && r.TRY) ? ((1 / r.XAU) * r.TRY / 31.1).toFixed(2) : "---";
 
-        // 2. BROKER TALİMATI (Daha sade ama derin)
-        const brokerPrompt = `Analist: Piyami LifeOS. 
-        Mevcut Fiyatlar: BTC: ${btc}$, Altın: ${gold}$, Gümüş: ${silver}$, USD/TRY: ${usdTry}. 
-        Kullanıcı Piyami Bey'e profesyonel ve cesur finansal strateji sun.
-        Soru: ${question}`;
+        // BROKER STRATEJİSİ: Her mesaja fırsat analizi eklemesi talimatı
+        const brokerPrompt = `
+        KİMLİK: Sen Piyami LifeOS'sun. Piyami Bey'in en sadık broker'ısın.
+        GÜNCEL VERİ: BTC: ${btc}$, Altın Ons: ${gold}$, Gümüş: ${silver}$, USD/TRY: ${usdTry}TL, Gram Altın: ${gramGold}TL.
+        
+        GÖREV: Kullanıcı sadece 'selam' veya 'nasılsın' dese bile, nezaketi kısa kes ve hemen piyasa durumuna geç. 
+        - Şu an en mantıklı yatırım hangisi? (Altın mı, BTC mi, Nakit mi?)
+        - Yamyamların kurduğu tuzaklar nerede?
+        - Kısa vadeli fırsat var mı?
+        - Yetimlerin bütçesini koruyacak en güvenli liman neresi?
+        
+        Dürüst, cesur ve profesyonel ol. 'Yatırım tavsiyesi değildir' notunu unutma ama Piyami Bey'e net yol göster.
+        
+        Piyami Bey'in Mesajı: ${question}`;
 
-        // 3. GÜVENLİ ÇAĞRI (Hata Yönetimi Eklenmiş)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -39,19 +47,7 @@ export default async function handler(req) {
         });
 
         const apiData = await response.json();
-
-        // KRİTİK NOKTA: Yanıt var mı yok mu kontrolü
-        let answerText = "";
-        
-        if (apiData.candidates && apiData.candidates[0] && apiData.candidates[0].content) {
-            answerText = apiData.candidates[0].content.parts[0].text;
-        } else if (apiData.promptFeedback && apiData.promptFeedback.blockReason) {
-            answerText = "Broker Engellendi. Sebep: " + apiData.promptFeedback.blockReason;
-        } else if (apiData.error) {
-            answerText = "Google API Hatası: " + apiData.error.message;
-        } else {
-            answerText = "Bilinmeyen bir nedenle analiz yapılamadı. Lütfen farklı bir şekilde sorunuz.";
-        }
+        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Piyami Bey, şu an verilerde bir parazit var, tekrar deneyelim.";
 
         return new Response(JSON.stringify({ answer: answerText }), {
             headers: { 'Content-Type': 'application/json' }
