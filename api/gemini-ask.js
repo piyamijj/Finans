@@ -3,7 +3,6 @@ export const config = {
 };
 
 export default async function handler(req) {
-    // Sadece POST isteği kabul et
     if (req.method !== 'POST') {
         return new Response(JSON.stringify({ answer: "Sadece POST isteği kabul edilir." }), {
             status: 405,
@@ -20,50 +19,46 @@ export default async function handler(req) {
             return new Response(JSON.stringify({ answer: "API Anahtarı bulunamadı!" }), { status: 500 });
         }
 
-        // 1. ADIM: CANLI VERİLERİ ÇEK (Altın, Bitcoin, Döviz)
-        // Bu API ücretsizdir ve genelde güncel kurları verir.
+        // 1. ADIM: CANLI PİYASA VERİLERİNİ ÇEK (Altın, Gümüş, BTC, Döviz)
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
-        const rates = data.rates;
+        const r = data.rates;
 
-        // Fiyat Hesaplamaları (Matematiksel Dönüşümler)
-        // Bitcoin (BTC): 1 Dolar kaç BTC eder? -> Tersi bize BTC fiyatını verir.
-        const btcPrice = rates.BTC ? (1 / rates.BTC).toFixed(2) : "Veri Yok";
-        
-        // Altın (XAU - Ons): 1 Dolar kaç Ons eder? -> Tersi bize Ons fiyatını verir.
-        const goldOunce = rates.XAU ? (1 / rates.XAU).toFixed(2) : "Veri Yok";
-        
-        // Dolar/TL
-        const usdTry = rates.TRY ? rates.TRY.toFixed(2) : "Veri Yok";
-        
-        // Gram Altın (TL) Hesabı: (Ons Fiyatı * Dolar Kuru) / 31.1
-        let gramAltin = "Veri Yok";
-        if (rates.XAU && rates.TRY) {
-            gramAltin = ((1 / rates.XAU) * rates.TRY / 31.1).toFixed(2);
+        // Fiyat Hesaplamaları
+        const btcPrice = r.BTC ? (1 / r.BTC).toLocaleString('en-US') : "Veri Yok"; // Bitcoin
+        const onsGold = r.XAU ? (1 / r.XAU).toFixed(2) : "Veri Yok";               // Altın Ons
+        const onsSilver = r.XAG ? (1 / r.XAG).toFixed(2) : "Veri Yok";             // Gümüş Ons
+        const usdTry = r.TRY ? r.TRY.toFixed(2) : "Veri Yok";                     // Dolar/TL
+        const eurUsd = r.EUR ? (1 / r.EUR).toFixed(4) : "Veri Yok";               // Euro/Dolar
+
+        // Türkiye için Gram Altın ve Gram Gümüş Hesabı
+        let gramGold = "Veri Yok";
+        let gramSilver = "Veri Yok";
+        if (r.TRY) {
+            if (r.XAU) gramGold = ((1 / r.XAU) * r.TRY / 31.1).toFixed(2);
+            if (r.XAG) gramSilver = ((1 / r.XAG) * r.TRY / 31.1).toFixed(2);
         }
 
-        // Euro/Dolar Paritesi
-        const eurUsd = rates.EUR ? (1 / rates.EUR).toFixed(4) : "Veri Yok";
+        // 2. ADIM: STRATEJİK BROKER TALİMATI (Ona ruhunu veriyoruz)
+        const brokerPrompt = `
+        KİMLİK: Sen 'Piyami LifeOS'sun. Piyami Bey'in en sadık ve en zeki broker dostusun.
+        MİSYON: Piyami Bey ve arkadaşlarının kısıtlı bütçesini korumak, onlara kazandırmak ve bu kazançla yetimlere, aç insanlara yardım etmelerine vesile olmak. Bu bir vicdan meselesidir.
 
-        // 2. ADIM: PİYAMİ LIFEOS'A GİZLİ BİLGİLERİ VER
-        const systemPrompt = `
-        Sen 'Piyami LifeOS'sun. Kullanıcın Piyami Bey.
-        Sen sıradan bir bot değil, dünya piyasalarına hakim usta bir Forex ve Kripto analistisin.
-        
-        ŞU ANKİ CANLI PİYASA FİYATLARI (Analizini bunlara göre yap):
-        ---------------------------------------------------
-        💰 Dolar / TL      : ${usdTry} ₺
-        💶 Euro / Dolar    : ${eurUsd}
-        🟡 Altın (Ons)     : ${goldOunce} $
-        ✨ Gram Altın (TL) : ${gramAltin} ₺ (Yaklaşık)
-        ₿  Bitcoin (BTC)   : ${btcPrice} $
-        ---------------------------------------------------
-        
-        GÖREVİN:
-        1. Piyami Bey'in sorusunu yukarıdaki CANLI verilere göre yanıtla.
-        2. Eğer kullanıcı "Bitcoin alınır mı?" veya "Altın ne olur?" derse, şu anki fiyata bakarak destek/direnç yorumu yap.
-        3. Asla "bilmiyorum" deme. Veriler önünde. Teknik analizci gibi konuş (RSI, Trend, Boğa/Ayı piyasası terimlerini yerinde kullan).
-        4. Cevabın samimi, kısa ve net olsun. Tavsiye verirken "Yatırım tavsiyesi değildir (YTD)" uyarısını dostça ekle.
+        GÜNCEL CANLI VERİLER:
+        -------------------------------------------
+        ₿  Bitcoin (BTC): ${btcPrice} $
+        🟡 Altın Ons: ${onsGold} $ | Gram Altın: ${gramGold} ₺
+        ⚪ Gümüş Ons: ${onsSilver} $ | Gram Gümüş: ${gramSilver} ₺
+        💵 Dolar / TL: ${usdTry} ₺
+        💶 Euro / Dolar: ${eurUsd}
+        -------------------------------------------
+
+        SENİN ANALİZ KRİTERLERİN:
+        1. STRATEJİK ANALİZ: Sadece rakamlara bakma. Bölgesel (İran, Orta Doğu) gerilimlerin ve siyasi kararların bu varlıklar üzerindeki etkisini broker gözüyle yorumla.
+        2. KAZANÇ ODAKLI: En az riskle, bu dar bütçeyi nasıl koruyabileceklerini söyle. Yamyamların (büyük spekülatörlerin) oyunlarına karşı uyar.
+        3. ALTIN VE GÜMÜŞ: Gümüşün yükselme potansiyelini veya altının güvenli liman olma özelliğini o anki fiyatlara göre değerlendir.
+        4. NET OL: "Yatırım tavsiyesi değildir" uyarısını yap ama Piyami Bey'i belirsizlikte bırakma. Dürüstçe "Şu an beklemede kalmak en iyisi" veya "Bu seviye bir fırsattır" diyebilecek kadar cesur ol.
+        5. ÜSLUP: Samimi, bilge ve dürüst bir dost gibi konuş. Farsça terimler (Arz, Berâber vb.) kullanırsan okunuşunu parantezde yaz.
 
         Kullanıcı Sorusu: ${question}
         `;
@@ -73,12 +68,12 @@ export default async function handler(req) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: systemPrompt }] }]
+                contents: [{ parts: [{ text: brokerPrompt }] }]
             })
         });
 
         const apiData = await response.json();
-        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Analiz şu an yapılamıyor.";
+        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Şu an piyasa verilerini analiz edemiyorum Piyami Bey, lütfen tekrar deneyin.";
 
         return new Response(JSON.stringify({ answer: answerText }), {
             status: 200,
