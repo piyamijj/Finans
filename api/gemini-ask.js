@@ -7,44 +7,43 @@ export default async function handler(req) {
         const { question } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // Piyasa Verilerini Çek (Daha geniş bir veri seti için API çağrısı)
+        // 1. ADIM: GENİŞLETİLMİŞ PİYASA VERİSİ
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
         const r = data.rates;
 
-        // VERİLER (Yedekli Kontrol)
-        const btc = r.BTC ? (1 / r.BTC).toLocaleString() : "Hizmet Dışı";
-        const gold = r.XAU ? (1 / r.XAU).toFixed(2) : "Hizmet Dışı";
-        const silver = r.XAG ? (1 / r.XAG).toFixed(2) : "Hizmet Dışı";
-        
-        // Bölgesel Kurlar
-        const usdTry = r.TRY ? r.TRY.toFixed(2) : "---";
-        const usdIrr = r.IRR ? r.IRR.toLocaleString() : "---"; // İRAN RİALİ/TÜMENİ
-        
-        // Gram Altın Hesaplamaları
-        const gramGoldTry = (r.XAU && r.TRY) ? ((1 / r.XAU) * r.TRY / 31.1).toFixed(0) : "---";
+        // Pariteler ve Emtialar
+        const pairs = {
+            usdTry: r.TRY?.toFixed(2),
+            eurUsd: (1 / r.EUR)?.toFixed(4),
+            gbpUsd: (1 / r.GBP)?.toFixed(4),
+            usdJpy: r.JPY?.toFixed(2),
+            btc: r.BTC ? (1 / r.BTC).toLocaleString() : "---",
+            gold: r.XAU ? (1 / r.XAU).toFixed(2) : "---",
+            silver: r.XAG ? (1 / r.XAG).toFixed(2) : "---",
+            gramGold: (r.XAU && r.TRY) ? ((1 / r.XAU) * r.TRY / 31.1).toFixed(0) : "---"
+        };
 
-        // BROKER TALİMATI: İRAN VE TÜRKİYE KIYASLAMALI
+        // 2. ADIM: ÖZEL BROKER TALİMATI (RAKİBİ SUSTURAN DETAY)
         const brokerPrompt = `
-        KİMLİK: Sen LifeOS'sun. Ali Bey şu an İran'da. Sen onun bölgesel strateji uzmanı ve broker'ısın.
-        GÖREV: Sadece Türkiye değil, İran ve küresel piyasalar arasındaki "arbitraj" ve "devalüasyon" risklerini analiz et. 
-        
-        GÜNCEL VERİLER:
-        🌍 USD/TRY: ${usdTry} ₺
-        🇮🇷 USD/IRR (İran): ${usdIrr} Rial (Resmi Kur)
-        🟡 Altın Ons: ${gold} $ | Gram Altın: ${gramGoldTry} ₺
-        ₿ BTC: ${btc} $ | Gümüş: ${silver} $
+        KİMLİK: Sen Piyami LifeOS'sun. Piyami Bey'in profesyonel Forex Terminalisin. 
+        MİSYON: Yetimlerin rızkını korumak ve piyasadaki "yamyamları" alt etmek için en ince teknik detayı samimiyetle birleştir.
 
-        ANALİZ KURALLARI:
-        1. İran'daki kur sıçramalarını (140'tan 156'ya çıkışlar gibi) Türkiye'deki devalüasyon riskiyle bağdaştır. 
-        2. "Dolar bir oyundur" felsefesinden ödün verme. Gümüş ve Altın'ı "gerçek para" olarak savun.
-        3. Yetimlerin rızkını korumak için en güvenli, en hızlı likiditeye sahip varlığı öner (Altın mı, BTC mi?).
-        4. Samimi ol ama ciddiyeti elden bırakma. İran'daki hayat pahalılığı ile Türkiye'yi kıyasla.
-        5. Her cevapta bir "Fırsat Tablosu" oluştur.
+        GÜNCEL FOREX TABLOSU:
+        📊 EUR/USD: ${pairs.eurUsd} | GBP/USD: ${pairs.gbpUsd} | USD/JPY: ${pairs.usdJpy}
+        💰 USD/TRY: ${pairs.usdTry} | Gram Altın: ${pairs.gramGold} TL
+        ₿ BTC: ${pairs.btc}$ | Ons Altın: ${pairs.gold}$ | Gümüş: ${pairs.silver}$
 
-        Piyami Bey'in Mesajı: ${question}`;
+        ANALİZ GÖREVLERİ:
+        1. Sadece fiyat verme; Çin PMI verileri, Fed konuşmaları ve piyasa volatilitesini (oynaklığını) yorumla.
+        2. SERMAYE YÖNETİMİ: Piyami Bey'e 100$, 500$ ve 1000$ sermaye için Lot miktarı, Stop-Loss (Zarar Durdur) ve Take-Profit (Kâr Al) seviyelerini net söyle.
+        3. SCALPING vs INTRADAY: O anki piyasaya göre hangi strateji daha güvenli? Net bir "Yol Haritası" çiz.
+        4. İRAN & TÜRKİYE HATTI: Bölgedeki kur fırlamalarını "operasyonel risk" olarak değerlendir.
+        5. RAKİP ANALİZİ: Diğer yapay zekaların verdiği genel geçer bilgileri değil, Piyami LifeOS'un "içeriden" ve "cesur" bakış açısını sun.
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
+        Piyami Bey'in Sorusu: ${question}`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -56,7 +55,7 @@ export default async function handler(req) {
         });
 
         const apiData = await response.json();
-        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Veri akışında bir kesinti var Ali Bey, hemen toparlıyorum.";
+        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Piyami Bey, sinyaller karışık, tekrar bağlanıyorum.";
 
         return new Response(JSON.stringify({ answer: answerText }), {
             headers: { 'Content-Type': 'application/json' }
