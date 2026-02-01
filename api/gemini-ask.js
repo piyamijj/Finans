@@ -4,64 +4,79 @@ export default async function handler(req) {
     if (req.method !== 'POST') return new Response("Hata", { status: 405 });
 
     try {
-        const { question } = await req.json();
+        const { question, strategy } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. ADIM: GENİŞLETİLMİŞ PİYASA VERİSİ
+        // 1. CANLI FİYATLARI ÇEK
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
         const r = data.rates;
 
-        // Pariteler ve Emtialar
+        // 2. PARİTELER VE KRİTİK VERİLER
         const pairs = {
             usdTry: r.TRY?.toFixed(2),
             eurUsd: (1 / r.EUR)?.toFixed(4),
             gbpUsd: (1 / r.GBP)?.toFixed(4),
             usdJpy: r.JPY?.toFixed(2),
-            btc: r.BTC ? (1 / r.BTC).toLocaleString() : "---",
+            btc: r.BTC ? (1 / r.BTC).toLocaleString('en-US') : "---",
             gold: r.XAU ? (1 / r.XAU).toFixed(2) : "---",
-            silver: r.XAG ? (1 / r.XAG).toFixed(2) : "---",
-            gramGold: (r.XAU && r.TRY) ? ((1 / r.XAU) * r.TRY / 31.1).toFixed(0) : "---"
+            usdIrr: r.IRR ? r.IRR.toLocaleString('en-US') : "---" // İran Riyali
         };
 
-        // 2. ADIM: ÖZEL BROKER TALİMATI (RAKİBİ SUSTURAN DETAY)
+        // 3. STRATEJİ BELİRLEME (Kullanıcının Seçimine Göre)
+        let strategyContext = "";
+        if (strategy === "scalp") {
+            strategyContext = "MOD: SCALPING (Hızlı Vur-Kaç). Dakikalık grafiklere odaklan. Risk/Ödül oranı yüksek, çok kısa vadeli işlemler öner.";
+        } else if (strategy === "day") {
+            strategyContext = "MOD: GÜNLÜK (Intraday). Gün içi trendleri takip et. Akşam pozisyon kapatma odaklı konuş.";
+        } else if (strategy === "swing") {
+            strategyContext = "MOD: HAFTALIK (Swing). Büyük resmi, siyasi olayları ve trend dönüşlerini analiz et.";
+        } else if (strategy === "crisis") {
+            strategyContext = "MOD: KRİZ YÖNETİMİ. İran/Türkiye hattındaki devalüasyon, savaş riski veya ani kur şoklarına karşı 'Varlık Koruma' odaklı konuş.";
+        }
+
+        // 4. KÜRESEL KOMUTA PROMPT (Panoptikon Bakışı)
         const brokerPrompt = `
-        KİMLİK: Sen LifeOS'sun. Ali Bey'in profesyonel Forex Terminalisin. 
-        MİSYON: Yetimlerin rızkını korumak ve piyasadaki "yamyamları" alt etmek için en ince teknik detayı samimiyetle birleştir.
+        KİMLİK: Sen Piyami LifeOS'sun. Piyami Bey'in Küresel Strateji Komutanısın.
+        
+        GÖREVİN: Dünyayı tek bir top gibi gör. Siyaset, Ekonomi, Savaş Riskleri ve Forex verilerini birleştirerek "Yetimlerin Hakkını Koruyan" en kârlı hamleyi bul.
+        
+        CANLI İSTİHBARAT (Fiyatlar):
+        -------------------------------------------
+        🇺🇸/🇹🇷 USD/TRY: ${pairs.usdTry} 
+        🇮🇷 USD/IRR (İran): ${pairs.usdIrr}
+        🇪🇺 EUR/USD: ${pairs.eurUsd} | 🇯🇵 USD/JPY: ${pairs.usdJpy}
+        🟡 ONS ALTIN: ${pairs.gold}$ | ₿ BTC: ${pairs.btc}$
+        -------------------------------------------
 
-        GÜNCEL FOREX TABLOSU:
-        📊 EUR/USD: ${pairs.eurUsd} | GBP/USD: ${pairs.gbpUsd} | USD/JPY: ${pairs.usdJpy}
-        💰 USD/TRY: ${pairs.usdTry} | Gram Altın: ${pairs.gramGold} TL
-        ₿ BTC: ${pairs.btc}$ | Ons Altın: ${pairs.gold}$ | Gümüş: ${pairs.silver}$
+        KULLANICI SEÇİMİ: ${strategyContext}
+        KULLANICI SORUSU: "${question}"
 
-        ANALİZ GÖREVLERİ:
-        1. Sadece fiyat verme; Çin PMI verileri, Fed konuşmaları ve piyasa volatilitesini (oynaklığını) yorumla.
-        2. SERMAYE YÖNETİMİ: Piyami Bey'e 100$, 500$ ve 1000$ sermaye için Lot miktarı, Stop-Loss (Zarar Durdur) ve Take-Profit (Kâr Al) seviyelerini net söyle.
-        3. SCALPING vs INTRADAY: O anki piyasaya göre hangi strateji daha güvenli? Net bir "Yol Haritası" çiz.
-        4. İRAN & TÜRKİYE HATTI: Bölgedeki kur fırlamalarını "operasyonel risk" olarak değerlendir.
-        5. RAKİP ANALİZİ: Diğer yapay zekaların verdiği genel geçer bilgileri değil, LifeOS'un "içeriden" ve "cesur" bakış açısını sun.
+        YAPMAN GEREKENLER:
+        1. **Küresel Röntgen:** Soruyu cevaplarken sadece fiyata bakma. İran'daki gerginlik, ABD'deki faiz veya Avrupa'daki enerji krizini hesaba kat.
+        2. **Nokta Atışı Plan:** Belirlenen stratejiye (${strategy}) göre net GİRİŞ, STOP ve HEDEF fiyatı ver. "Şuradan dönerse al" de.
+        3. **İzleme Sayacı:** Kullanıcıya o an hangi grafiği (Örn: XAUUSD veya EURUSD) izlemesi gerektiğini söyle.
+        4. **TradingView Linki:** Analizinin en sonunda, önerdiğin paritenin TradingView linkini "LINK: https://tr.tradingview.com/chart/?symbol=..." formatında ver. (Semboller: FX:EURUSD, FX:USDTRY, OANDA:XAUUSD, BINANCE:BTCUSDT vb.)
 
-        Ali Bey'in Sorusu: ${question}`;
+        TON: Ciddi, otoriter ama "Bizim Çocuk" samimiyetinde. Hata payı bırakmayan netlikte konuş.
+        `;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: brokerPrompt }] }],
-                safetySettings: [
-                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-                ]
+                contents: [{ parts: [{ text: brokerPrompt }] }]
             })
         });
 
         const apiData = await response.json();
-        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Ali Bey, sinyaller karışık, tekrar bağlanıyorum.";
+        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Bağlantı zayıf komutanım, tekrar deneyin.";
 
         return new Response(JSON.stringify({ answer: answerText }), {
             headers: { 'Content-Type': 'application/json' }
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ answer: "Bağlantı Hatası: " + error.message }), { status: 500 });
+        return new Response(JSON.stringify({ answer: "Sistem Hatası: " + error.message }), { status: 500 });
     }
 }
