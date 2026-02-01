@@ -26,7 +26,7 @@ export default async function handler(req) {
 
         // 2. ADIM: ÖZEL BROKER TALİMATI (RAKİBİ SUSTURAN DETAY)
         const brokerPrompt = `
-        KİMLİK: Sen LifeOS'sun. Levent Bey'in profesyonel Forex Terminalisin. 
+        KİMLİK: Sen LifeOS'sun. Ali Bey'in profesyonel Forex Terminalisin. 
         MİSYON: Yetimlerin rızkını korumak ve piyasadaki "yamyamları" alt etmek için en ince teknik detayı samimiyetle birleştir.
 
         GÜNCEL FOREX TABLOSU:
@@ -41,7 +41,7 @@ export default async function handler(req) {
         4. İRAN & TÜRKİYE HATTI: Bölgedeki kur fırlamalarını "operasyonel risk" olarak değerlendir.
         5. RAKİP ANALİZİ: Diğer yapay zekaların verdiği genel geçer bilgileri değil, LifeOS'un "içeriden" ve "cesur" bakış açısını sun.
 
-        Levent Bey'in Sorusu: ${question}`;
+        Ali Bey'in Sorusu: ${question}`;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
             method: 'POST',
@@ -55,7 +55,7 @@ export default async function handler(req) {
         });
 
         const apiData = await response.json();
-        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Levent Bey, sinyaller karışık, tekrar bağlanıyorum.";
+        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Ali Bey, sinyaller karışık, tekrar bağlanıyorum.";
 
         return new Response(JSON.stringify({ answer: answerText }), {
             headers: { 'Content-Type': 'application/json' }
