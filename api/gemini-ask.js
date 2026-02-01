@@ -26,7 +26,7 @@ export default async function handler(req) {
 
         // 2. ADIM: ÖZEL BROKER TALİMATI (RAKİBİ SUSTURAN DETAY)
         const brokerPrompt = `
-        KİMLİK: Sen Piyami LifeOS'sun. Piyami Bey'in profesyonel Forex Terminalisin. 
+        KİMLİK: Sen LifeOS'sun. Levent Bey'in profesyonel Forex Terminalisin. 
         MİSYON: Yetimlerin rızkını korumak ve piyasadaki "yamyamları" alt etmek için en ince teknik detayı samimiyetle birleştir.
 
         GÜNCEL FOREX TABLOSU:
@@ -39,9 +39,9 @@ export default async function handler(req) {
         2. SERMAYE YÖNETİMİ: Piyami Bey'e 100$, 500$ ve 1000$ sermaye için Lot miktarı, Stop-Loss (Zarar Durdur) ve Take-Profit (Kâr Al) seviyelerini net söyle.
         3. SCALPING vs INTRADAY: O anki piyasaya göre hangi strateji daha güvenli? Net bir "Yol Haritası" çiz.
         4. İRAN & TÜRKİYE HATTI: Bölgedeki kur fırlamalarını "operasyonel risk" olarak değerlendir.
-        5. RAKİP ANALİZİ: Diğer yapay zekaların verdiği genel geçer bilgileri değil, Piyami LifeOS'un "içeriden" ve "cesur" bakış açısını sun.
+        5. RAKİP ANALİZİ: Diğer yapay zekaların verdiği genel geçer bilgileri değil, LifeOS'un "içeriden" ve "cesur" bakış açısını sun.
 
-        Piyami Bey'in Sorusu: ${question}`;
+        Levent Bey'in Sorusu: ${question}`;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
             method: 'POST',
@@ -55,7 +55,7 @@ export default async function handler(req) {
         });
 
         const apiData = await response.json();
-        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Piyami Bey, sinyaller karışık, tekrar bağlanıyorum.";
+        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Levent Bey, sinyaller karışık, tekrar bağlanıyorum.";
 
         return new Response(JSON.stringify({ answer: answerText }), {
             headers: { 'Content-Type': 'application/json' }
