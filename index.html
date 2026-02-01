@@ -3,30 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ali LifeOS Finans</title>
+    <title>Piyami LifeOS Finans</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .card { background: white; width: 90%; max-width: 500px; padding: 2rem; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        h1 { color: #1a73e8; text-align: center; font-size: 1.5rem; margin-bottom: 1.5rem; }
-        .response-area { background-color: #e8f0fe; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #1a73e8; min-height: 60px; font-size: 0.95rem; line-height: 1.5; }
+        h1 { color: #1a73e8; text-align: center; font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        
+        /* Yeni Eklenen Strateji Menüsü Stili */
+        select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; background-color: #fff; color: #333; cursor: pointer; }
+        select:focus { outline: none; border-color: #1a73e8; }
+
+        .response-area { background-color: #e8f0fe; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #1a73e8; min-height: 60px; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
+        
         textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; box-sizing: border-box; resize: vertical; margin-bottom: 1rem; }
-        button { width: 100%; background-color: #1a73e8; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        textarea:focus { outline: none; border-color: #1a73e8; }
+
+        button { width: 100%; background-color: #1a73e8; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.3s; font-size: 1rem; }
         button:hover { background-color: #1557b0; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* Grafik Butonu (Gizli gelir, link varsa açılır) */
+        .chart-link { display: none; text-align: center; margin-top: 15px; }
+        .chart-link a { background: #34a853; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .chart-link a:hover { background: #2e8b46; }
+
         .footer { text-align: center; margin-top: 1.5rem; font-size: 0.8rem; color: #666; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>Ali LifeOS Asistanı</h1>
+        <h1>Piyami LifeOS Asistanı</h1>
+        <div class="subtitle">Küresel Strateji Terminali</div>
         
+        <select id="strategyType">
+            <option value="crisis">🚨 Kriz Yönetimi (İran/TR Odaklı)</option>
+            <option value="scalp">⚡ Scalping (Hızlı Vur-Kaç)</option>
+            <option value="day">📅 Günlük (Intraday)</option>
+            <option value="swing">📈 Haftalık (Yatırım)</option>
+        </select>
+
         <div class="response-area">
-            <strong style="display:block; margin-bottom:5px;">Ali Bey:</strong>
-            <span id="responseText">Merhaba! Ben finansal dostunuzum. Sorunuzu bekliyorum.</span>
+            <strong style="display:block; margin-bottom:5px; color:#1a73e8;">Piyami Bey:</strong>
+            <span id="responseText">Merhaba! Modunuzu seçin ve sorunuzu sorun, yetimlerin hakkını korumak için hazırım.</span>
+            
+            <div class="chart-link" id="chartLinkBox">
+                <a href="#" target="_blank" id="chartLinkBtn">📊 Canlı Grafiği Aç</a>
+            </div>
         </div>
 
-        <textarea id="questionInput" placeholder="Örn: Döviz almalı mıyım? Riski nedir?"></textarea>
+        <textarea id="questionInput" placeholder="Örn: 500$ ile bugün ne yapalım? Dolar ne durumda?"></textarea>
         <button id="sendBtn" onclick="askGemini()">Analiz Et</button>
         
         <div class="footer">Moto G73 5G | LifeOS Güvencesiyle</div>
@@ -35,26 +62,45 @@
     <script>
         async function askGemini() {
             const input = document.getElementById('questionInput').value;
+            const strategy = document.getElementById('strategyType').value; // Stratejiyi al
             const responseText = document.getElementById('responseText');
+            const chartBox = document.getElementById('chartLinkBox');
             const btn = document.getElementById('sendBtn');
 
             if (!input.trim()) return alert("Lütfen boş soru sorma dostum.");
 
-            responseText.innerText = "Ali LifeOS verileri analiz ediyor...";
+            responseText.innerText = "Piyami LifeOS verileri analiz ediyor... Küresel hatlar taranıyor...";
+            chartBox.style.display = 'none'; // Yeni aramada butonu gizle
             btn.disabled = true;
 
             try {
-                // Senin dosya ismin loglarda gemini-ask olarak görünüyor
+                // Backend'e hem soruyu hem stratejiyi gönderiyoruz
                 const req = await fetch('/api/gemini-ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: input })
+                    body: JSON.stringify({ question: input, strategy: strategy })
                 });
 
                 const res = await req.json();
                 
                 if (res.answer) {
-                    responseText.innerText = res.answer;
+                    let cleanText = res.answer;
+                    
+                    // Cevap içinde LINK var mı diye bak
+                    const linkMatch = cleanText.match(/LINK: (.*)/);
+                    
+                    if (linkMatch) {
+                        const linkUrl = linkMatch[1];
+                        document.getElementById('chartLinkBtn').href = linkUrl;
+                        chartBox.style.display = 'block'; // Butonu göster
+                        cleanText = cleanText.replace(/LINK: .*/, ''); // Link yazısını metinden temizle
+                    }
+
+                    // Markdown yıldızlarını kalın yazıya çevir (**yazı** -> <b>yazı</b>)
+                    cleanText = cleanText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    
+                    // Satır başlarını düzelt
+                    responseText.innerHTML = cleanText.replace(/\n/g, '<br>');
                 } else {
                     responseText.innerText = "Bir cevap oluşmadı.";
                 }
