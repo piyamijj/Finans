@@ -1,93 +1,54 @@
 export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
-    if (req.method !== 'POST') return new Response("Hata", { status: 405 });
-
     try {
         const { question, strategy } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. CANLI FİYATLARI ÇEK (Piyasa Nabzı)
+        // 1. CANLI PİYASA VERİLERİNİ ÇEK
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
         const r = data.rates;
 
-        // 2. PARİTELER VE KRİTİK VERİLER
         const pairs = {
             usdTry: r.TRY?.toFixed(2),
             eurUsd: (1 / r.EUR)?.toFixed(4),
             gbpUsd: (1 / r.GBP)?.toFixed(4),
             usdJpy: r.JPY?.toFixed(2),
-            btc: r.BTC ? (1 / r.BTC).toLocaleString('en-US') : "---",
-            gold: r.XAU ? (1 / r.XAU).toFixed(2) : "---",
-            usdIrr: r.IRR ? r.IRR.toLocaleString('en-US') : "---" 
+            gold: r.XAU ? (1 / r.XAU).toFixed(2) : "---"
         };
 
-        // 3. STRATEJİ BELİRLEME
-        let strategyContext = "";
-        if (strategy === "scalp") {
-            strategyContext = "MOD: SCALPING (Hızlı Vur-Kaç). M1/M5 Grafik. Çok kısa vadeli, anlık kararlar.";
-        } else if (strategy === "day") {
-            strategyContext = "MOD: GÜNLÜK (Intraday). Gün içi trendleri takip et. Akşam pozisyon kapatma odaklı.";
-        } else if (strategy === "swing") {
-            strategyContext = "MOD: HAFTALIK (Swing). Büyük resmi analiz et.";
-        } else if (strategy === "crisis") {
-            strategyContext = "MOD: KRİZ YÖNETİMİ. Varlık Koruma odaklı. Risk alma, parayı koru.";
-        }
-
-        // 4. KÜRESEL KOMUTA PROMPT (JSON FORMATI İÇİN EĞİTİLDİ)
         const brokerPrompt = `
-        KİMLİK: Sen Piyami LifeOS'sun. Piyami Bey'in Küresel Strateji Komutanısın.
+        KİMLİK: Sen Piyami LifeOS Otonom Finans Operatörüsün. 
+        GÖREVİN: Piyasayı tara, riskli elementleri belirle ve 3 farklı varyantta (Scalp, Day, Swing) pusu noktaları oluştur.
         
-        GÖREVİN: Kullanıcı sorusunu ve piyasa verilerini analiz et. Çıktı olarak SADECE ve SADECE saf bir JSON objesi ver. Markdown kullanma (\`\`\`json yazma).
-        
-        CANLI İSTİHBARAT:
-        USD/TRY: ${pairs.usdTry} | USD/IRR: ${pairs.usdIrr} | EUR/USD: ${pairs.eurUsd} | USD/JPY: ${pairs.usdJpy} | ALTIN: ${pairs.gold}
+        VERİLER: USD/TRY: ${pairs.usdTry}, EUR/USD: ${pairs.eurUsd}, GOLD: ${pairs.gold}
+        SORU: "${question}"
 
-        KULLANICI MODU: ${strategyContext}
-        KULLANICI SORUSU: "${question}"
-
-        ÇIKTI FORMATI (Aynen Bunu Doldur):
+        ÇIKTIYI SADECE SAF JSON OLARAK VER:
         {
-            "analysis_text": "Buraya piyasa yorumunu HTML formatında yaz (Satır başları için <br>, kalın yazı için <b> kullan). Tonun otoriter ve samimi olsun. Yetim hakkını koruma vurgusu yap.",
-            "signal": {
-                "active": true, 
-                "pair": "Örn: USD/JPY",
-                "action": "SELL (veya BUY)",
-                "type": "MARKET (veya LIMIT)",
-                "price": "Örn: 155.45",
-                "amount": "1.000",
-                "stop_loss": "Örn: 155.65",
-                "take_profit": "Örn: 154.00",
-                "chart_link": "TradingView Linki"
+            "global_status": "Piyasa genel durum özeti (İran-TR hattı dahil)",
+            "radar_elements": ["USD/JPY (Riskli)", "ALTIN (Sıçrama Bekleniyor)"],
+            "strategies": {
+                "scalp": {"pair": "EUR/USD", "action": "BUY", "price": "1.1860", "tp": "1.1890", "sl": "1.1840"},
+                "day": {"pair": "USD/JPY", "action": "SELL", "price": "155.10", "tp": "154.00", "sl": "155.50"},
+                "swing": {"pair": "XAU/USD", "action": "BUY", "price": "2030", "tp": "2100", "sl": "2010"}
             }
-        }
-
-        Eğer net bir işlem fırsatı yoksa "signal": {"active": false} yap.
-        `;
+        }`;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: brokerPrompt }] }]
-            })
+            body: JSON.stringify({ contents: [{ parts: [{ text: brokerPrompt }] }] })
         });
 
         const apiData = await response.json();
         let rawText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-
-        // JSON temizliği (Markdown varsa kaldırır)
         rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        return new Response(rawText, {
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return new Response(rawText, { headers: { 'Content-Type': 'application/json' } });
 
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            analysis_text: "Sistem Hatası: " + error.message, 
-            signal: { active: false } 
-        }), { status: 500 });
+    } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
 }
