@@ -7,7 +7,7 @@ export default async function handler(req) {
         const { question, strategy } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. CANLI FİYATLARI ÇEK
+        // 1. CANLI FİYATLARI ÇEK (Piyasa Nabzı)
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
         const r = data.rates;
@@ -20,48 +20,53 @@ export default async function handler(req) {
             usdJpy: r.JPY?.toFixed(2),
             btc: r.BTC ? (1 / r.BTC).toLocaleString('en-US') : "---",
             gold: r.XAU ? (1 / r.XAU).toFixed(2) : "---",
-            usdIrr: r.IRR ? r.IRR.toLocaleString('en-US') : "---" // İran Riyali
+            usdIrr: r.IRR ? r.IRR.toLocaleString('en-US') : "---" 
         };
 
-        // 3. STRATEJİ BELİRLEME (Kullanıcının Seçimine Göre)
+        // 3. STRATEJİ BELİRLEME
         let strategyContext = "";
         if (strategy === "scalp") {
-            strategyContext = "MOD: SCALPING (Hızlı Vur-Kaç). Dakikalık grafiklere odaklan. Risk/Ödül oranı yüksek, çok kısa vadeli işlemler öner.";
+            strategyContext = "MOD: SCALPING (Hızlı Vur-Kaç). M1/M5 Grafik. Çok kısa vadeli, anlık kararlar.";
         } else if (strategy === "day") {
-            strategyContext = "MOD: GÜNLÜK (Intraday). Gün içi trendleri takip et. Akşam pozisyon kapatma odaklı konuş.";
+            strategyContext = "MOD: GÜNLÜK (Intraday). Gün içi trendleri takip et. Akşam pozisyon kapatma odaklı.";
         } else if (strategy === "swing") {
-            strategyContext = "MOD: HAFTALIK (Swing). Büyük resmi, siyasi olayları ve trend dönüşlerini analiz et.";
+            strategyContext = "MOD: HAFTALIK (Swing). Büyük resmi analiz et.";
         } else if (strategy === "crisis") {
-            strategyContext = "MOD: KRİZ YÖNETİMİ. İran/Türkiye hattındaki devalüasyon, savaş riski veya ani kur şoklarına karşı 'Varlık Koruma' odaklı konuş.";
+            strategyContext = "MOD: KRİZ YÖNETİMİ. Varlık Koruma odaklı. Risk alma, parayı koru.";
         }
 
-        // 4. KÜRESEL KOMUTA PROMPT (Panoptikon Bakışı)
+        // 4. KÜRESEL KOMUTA PROMPT (JSON FORMATI İÇİN EĞİTİLDİ)
         const brokerPrompt = `
         KİMLİK: Sen Piyami LifeOS'sun. Piyami Bey'in Küresel Strateji Komutanısın.
         
-        GÖREVİN: Dünyayı tek bir top gibi gör. Siyaset, Ekonomi, Savaş Riskleri ve Forex verilerini birleştirerek "Yetimlerin Hakkını Koruyan" en kârlı hamleyi bul.
+        GÖREVİN: Kullanıcı sorusunu ve piyasa verilerini analiz et. Çıktı olarak SADECE ve SADECE saf bir JSON objesi ver. Markdown kullanma (\`\`\`json yazma).
         
-        CANLI İSTİHBARAT (Fiyatlar):
-        -------------------------------------------
-        🇺🇸/🇹🇷 USD/TRY: ${pairs.usdTry} 
-        🇮🇷 USD/IRR (İran): ${pairs.usdIrr}
-        🇪🇺 EUR/USD: ${pairs.eurUsd} | 🇯🇵 USD/JPY: ${pairs.usdJpy}
-        🟡 ONS ALTIN: ${pairs.gold}$ | ₿ BTC: ${pairs.btc}$
-        -------------------------------------------
+        CANLI İSTİHBARAT:
+        USD/TRY: ${pairs.usdTry} | USD/IRR: ${pairs.usdIrr} | EUR/USD: ${pairs.eurUsd} | USD/JPY: ${pairs.usdJpy} | ALTIN: ${pairs.gold}
 
-        KULLANICI SEÇİMİ: ${strategyContext}
+        KULLANICI MODU: ${strategyContext}
         KULLANICI SORUSU: "${question}"
 
-        YAPMAN GEREKENLER:
-        1. **Küresel Röntgen:** Soruyu cevaplarken sadece fiyata bakma. İran'daki gerginlik, ABD'deki faiz veya Avrupa'daki enerji krizini hesaba kat.
-        2. **Nokta Atışı Plan:** Belirlenen stratejiye (${strategy}) göre net GİRİŞ, STOP ve HEDEF fiyatı ver. "Şuradan dönerse al" de.
-        3. **İzleme Sayacı:** Kullanıcıya o an hangi grafiği (Örn: XAUUSD veya EURUSD) izlemesi gerektiğini söyle.
-        4. **TradingView Linki:** Analizinin en sonunda, önerdiğin paritenin TradingView linkini "LINK: https://tr.tradingview.com/chart/?symbol=..." formatında ver. (Semboller: FX:EURUSD, FX:USDTRY, OANDA:XAUUSD, BINANCE:BTCUSDT vb.)
+        ÇIKTI FORMATI (Aynen Bunu Doldur):
+        {
+            "analysis_text": "Buraya piyasa yorumunu HTML formatında yaz (Satır başları için <br>, kalın yazı için <b> kullan). Tonun otoriter ve samimi olsun. Yetim hakkını koruma vurgusu yap.",
+            "signal": {
+                "active": true, 
+                "pair": "Örn: USD/JPY",
+                "action": "SELL (veya BUY)",
+                "type": "MARKET (veya LIMIT)",
+                "price": "Örn: 155.45",
+                "amount": "1.000",
+                "stop_loss": "Örn: 155.65",
+                "take_profit": "Örn: 154.00",
+                "chart_link": "TradingView Linki"
+            }
+        }
 
-        TON: Ciddi, otoriter ama "Bizim Çocuk" samimiyetinde. Hata payı bırakmayan netlikte konuş.
+        Eğer net bir işlem fırsatı yoksa "signal": {"active": false} yap.
         `;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -70,13 +75,19 @@ export default async function handler(req) {
         });
 
         const apiData = await response.json();
-        const answerText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Bağlantı zayıf komutanım, tekrar deneyin.";
+        let rawText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
 
-        return new Response(JSON.stringify({ answer: answerText }), {
+        // JSON temizliği (Markdown varsa kaldırır)
+        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        return new Response(rawText, {
             headers: { 'Content-Type': 'application/json' }
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ answer: "Sistem Hatası: " + error.message }), { status: 500 });
+        return new Response(JSON.stringify({ 
+            analysis_text: "Sistem Hatası: " + error.message, 
+            signal: { active: false } 
+        }), { status: 500 });
     }
 }
