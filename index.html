@@ -3,218 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piyami LifeOS Finans</title>
+    <title>Piyami LifeOS Otonom Terminal</title>
     <style>
-        /* TEMEL AYARLAR */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: white; width: 90%; max-width: 500px; padding: 2rem; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        h1 { color: #1a73e8; text-align: center; font-size: 1.5rem; margin-bottom: 0.5rem; }
-        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
-        
-        /* GİRİŞ ELEMANLARI */
-        select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; background-color: #fff; color: #333; cursor: pointer; }
-        textarea { width: 100%; height: 80px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; box-sizing: border-box; resize: vertical; margin-bottom: 1rem; }
-        button { width: 100%; background-color: #1a73e8; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.3s; font-size: 1rem; }
-        button:hover { background-color: #1557b0; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-
-        /* CEVAP ALANI */
-        .response-area { background-color: #e8f0fe; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #1a73e8; min-height: 60px; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
-
-        /* --- YENİ EKLENEN: SİNYAL KARTI (PUSU KUTUSU) --- */
-        .signal-box { 
-            background: #202124; /* Koyu Tema */
-            color: #fff; 
-            padding: 15px; 
-            border-radius: 10px; 
-            margin-top: 15px; 
-            display: none; /* Başlangıçta gizli */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .signal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #555; padding-bottom: 10px; margin-bottom: 10px; }
-        .signal-pair { font-size: 1.2rem; font-weight: bold; color: #fff; }
-        .signal-type { font-weight: bold; padding: 5px 12px; border-radius: 4px; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
-        .bg-sell { background-color: #e74c3c; color: white; } /* Kırmızı */
-        .bg-buy { background-color: #27ae60; color: white; } /* Yeşil */
-
-        .signal-row { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-        .signal-label { color: #9aa0a6; font-size: 0.9rem; }
-        .signal-value-box { display: flex; align-items: center; }
-        .signal-value { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.1rem; color: #fff; margin-right: 10px; }
-        
-        /* Kopyala Butonu */
-        .copy-btn { 
-            background: transparent; 
-            border: 1px solid #5f6368; 
-            color: #bdc3c7; 
-            cursor: pointer; 
-            font-size: 0.7rem; 
-            padding: 4px 8px; 
-            border-radius: 4px; 
-            width: auto;
-        }
-        .copy-btn:hover { background: #fff; color: #000; }
-        .copy-btn:active { background: #27ae60; border-color: #27ae60; color: white; }
-
-        .chart-link { text-align: center; margin-top: 15px; display: none; }
-        .chart-link a { background: #3c4043; color: white; padding: 8px 16px; text-decoration: none; border-radius: 20px; font-size: 0.8rem; border: 1px solid #5f6368; }
-
-        .footer { text-align: center; margin-top: 1.5rem; font-size: 0.8rem; color: #666; }
+        body { font-family: sans-serif; background: #0b0e11; color: #e9eaeb; margin: 0; padding: 10px; }
+        .dashboard { display: grid; grid-template-columns: 1fr; gap: 10px; max-width: 600px; margin: auto; }
+        .panel { background: #1e2329; border-radius: 10px; padding: 15px; border: 1px solid #333; }
+        .radar-box { border-left: 4px solid #f0b90b; background: #2b2f36; padding: 10px; margin-bottom: 10px; }
+        .strategy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; }
+        .strat-card { background: #000; padding: 8px; border-radius: 5px; font-size: 0.7rem; text-align: center; cursor: pointer; border: 1px solid #444; }
+        .strat-card:hover { border-color: #f0b90b; }
+        .active-trade { border: 2px solid #27ae60; background: #0c2d1a; margin-top: 10px; display: none; }
+        .radar-active { animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        button { width: 100%; padding: 12px; background: #f0b90b; color: #000; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        textarea { width: 100%; background: #2b2f36; color: #fff; border: 1px solid #444; border-radius: 5px; margin-top: 10px; padding: 5px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Piyami LifeOS Asistanı</h1>
-        <div class="subtitle">Küresel Strateji Terminali | Moto G73</div>
-        
-        <select id="strategyType">
-            <option value="crisis">🚨 Kriz Yönetimi (İran/TR Odaklı)</option>
-            <option value="scalp">⚡ Scalping (Hızlı Vur-Kaç)</option>
-            <option value="day">📅 Günlük (Intraday)</option>
-            <option value="swing">📈 Haftalık (Yatırım)</option>
-        </select>
+    <div class="dashboard">
+        <div class="panel">
+            <h2 style="color:#f0b90b; margin:0;">🛰️ PİYAMİ RADAR</h2>
+            <div id="globalStatus" style="font-size: 0.8rem; margin: 10px 0; color: #999;">Radar taranıyor...</div>
+            <div id="radarElements" class="radar-box">Aktif risk taraması bekleniyor...</div>
+        </div>
 
-        <div class="response-area">
-            <strong style="display:block; margin-bottom:5px; color:#1a73e8;">Piyami Bey:</strong>
-            <span id="responseText">Merhaba Komutanım! "Yetimlerin Hakkını Koruma" misyonu için verileri bekliyorum.</span>
-
-            <div id="signalCard" class="signal-box">
-                <div class="signal-header">
-                    <span id="sigPair" class="signal-pair">---</span>
-                    <span id="sigAction" class="signal-type">---</span>
-                </div>
-                
-                <div class="signal-row">
-                    <span class="signal-label">Fiyat (Price):</span>
-                    <div class="signal-value-box">
-                        <span id="sigPrice" class="signal-value">---</span>
-                        <button class="copy-btn" onclick="copyText('sigPrice')">KOPYALA</button>
-                    </div>
-                </div>
-
-                <div class="signal-row">
-                    <span class="signal-label">Miktar (Amount):</span>
-                    <div class="signal-value-box">
-                        <span id="sigAmount" class="signal-value">1.000</span>
-                        <button class="copy-btn" onclick="copyText('sigAmount')">KOPYALA</button>
-                    </div>
-                </div>
-
-                <div class="signal-row">
-                    <span class="signal-label">Stop Loss (SL):</span>
-                    <div class="signal-value-box">
-                        <span id="sigSl" class="signal-value" style="color:#e74c3c;">---</span>
-                        <button class="copy-btn" onclick="copyText('sigSl')">KOPYALA</button>
-                    </div>
-                </div>
-
-                <div class="signal-row">
-                    <span class="signal-label">Take Profit (TP):</span>
-                    <div class="signal-value-box">
-                        <span id="sigTp" class="signal-value" style="color:#2ecc71;">---</span>
-                        <button class="copy-btn" onclick="copyText('sigTp')">KOPYALA</button>
-                    </div>
-                </div>
-                
-                <div style="margin-top:10px; font-size:0.75rem; text-align:center; color:#9aa0a6;">
-                    <span id="sigOrderType">---</span>
-                </div>
-
-                <div class="chart-link" id="chartLinkBox">
-                    <a href="#" target="_blank" id="chartLinkBtn">📊 Grafiği Aç</a>
-                </div>
+        <div class="panel">
+            <h3 style="margin:0;">🎯 OTONOM VARYANTLAR</h3>
+            <div class="strategy-grid">
+                <div class="strat-card" onclick="selectStrat('scalp')"><b>SCALP</b><br><span id="sc_pair">-</span></div>
+                <div class="strat-card" onclick="selectStrat('day')"><b>GÜNLÜK</b><br><span id="dy_pair">-</span></div>
+                <div class="strat-card" onclick="selectStrat('swing')"><b>HAFTALIK</b><br><span id="sw_pair">-</span></div>
             </div>
         </div>
 
-        <textarea id="questionInput" placeholder="Örn: 1000$ ile ne yapalım? USDJPY ne durumda?"></textarea>
-        <button id="sendBtn" onclick="askGemini()">Analiz Et</button>
-        
-        <div class="footer">Piyami LifeOS Güvencesiyle</div>
+        <div id="activeTradePanel" class="panel active-trade">
+            <h3 style="margin:0; color:#27ae60;">⚡ AKTİF PUSU</h3>
+            <div id="tradeDetails" style="font-family: monospace; font-size: 1.1rem; margin-top:10px;"></div>
+            <div id="priceAlert" style="color:#f0b90b; font-weight:bold; margin-top:10px;"></div>
+        </div>
+
+        <textarea id="question" placeholder="Piyami Bey, yeni bir operasyon emri verin..."></textarea>
+        <button id="mainBtn" onclick="runOtonom()">OPERASYONU BAŞLAT</button>
     </div>
 
+    <audio id="alertSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
     <script>
-        async function askGemini() {
-            const input = document.getElementById('questionInput').value;
-            const strategy = document.getElementById('strategyType').value;
-            const responseText = document.getElementById('responseText');
-            const signalCard = document.getElementById('signalCard');
-            const chartBox = document.getElementById('chartLinkBox');
-            const btn = document.getElementById('sendBtn');
+        let allData = {};
+        let activeTargetPrice = null;
 
-            if (!input.trim()) return alert("Komutanım, boş emir gönderilemez.");
-
-            responseText.innerText = "Piyami LifeOS verileri işliyor... Pusu noktaları hesaplanıyor...";
-            signalCard.style.display = 'none'; // Kartı gizle
-            chartBox.style.display = 'none'; 
-            btn.disabled = true;
-            btn.innerText = "Hesaplanıyor...";
-
+        async function runOtonom() {
+            const q = document.getElementById('question').value;
+            const btn = document.getElementById('mainBtn');
+            btn.innerText = "ARAŞTIRILIYOR...";
+            
             try {
-                // Backend'e soruyu gönder
-                const req = await fetch('/api/gemini-ask', {
+                const res = await fetch('/api/gemini-ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: input, strategy: strategy })
+                    body: JSON.stringify({ question: q })
                 });
+                allData = await res.json();
 
-                const res = await req.json();
+                // 1. Radar ve Global Durum
+                document.getElementById('globalStatus').innerText = allData.global_status;
+                document.getElementById('radarElements').innerHTML = allData.radar_elements.map(e => `<li>${e}</li>`).join('');
+                document.getElementById('radarElements').classList.add('radar-active');
 
-                // 1. ANALİZ YAZISINI BAS
-                if (res.analysis_text) {
-                    responseText.innerHTML = res.analysis_text;
-                } else {
-                    responseText.innerText = "Veri alınamadı komutanım.";
-                }
+                // 2. Varyantları Doldur
+                document.getElementById('sc_pair').innerText = allData.strategies.scalp.pair;
+                document.getElementById('dy_pair').innerText = allData.strategies.day.pair;
+                document.getElementById('sw_pair').innerText = allData.strategies.swing.pair;
 
-                // 2. SİNYAL KARTINI DOLDUR (Eğer sinyal varsa)
-                if (res.signal && res.signal.active) {
-                    const s = res.signal;
-                    
-                    document.getElementById('sigPair').innerText = s.pair || "---";
-                    document.getElementById('sigPrice').innerText = s.price || "---";
-                    document.getElementById('sigAmount').innerText = s.amount || "1.000";
-                    document.getElementById('sigSl').innerText = s.stop_loss || "---";
-                    document.getElementById('sigTp').innerText = s.take_profit || "---";
-                    
-                    // Emir Tipi (Market/Limit)
-                    let orderText = s.type === "LIMIT" ? "ORDER (Limit - Bekleyen Emir)" : "TRADE (Piyasa Emri - Hemen)";
-                    document.getElementById('sigOrderType').innerText = orderText;
-
-                    // Al/Sat Renkleri
-                    const actionBadge = document.getElementById('sigAction');
-                    actionBadge.innerText = s.action;
-                    if (s.action && s.action.toUpperCase().includes("BUY")) {
-                        actionBadge.className = "signal-type bg-buy";
-                    } else {
-                        actionBadge.className = "signal-type bg-sell";
-                    }
-
-                    // TradingView Linki
-                    if (s.chart_link) {
-                        document.getElementById('chartLinkBtn').href = s.chart_link;
-                        chartBox.style.display = 'block';
-                    }
-
-                    // Kartı Göster
-                    signalCard.style.display = 'block';
-                }
-
-            } catch (error) {
-                responseText.innerText = "Bağlantı hatası: " + error;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Analiz Et";
-            }
+                btn.innerText = "RADAR AKTİF";
+            } catch (e) { alert("Hata: " + e.message); }
         }
 
-        // KOPYALAMA FONKSİYONU
-        function copyText(elementId) {
-            const text = document.getElementById(elementId).innerText;
-            if (text === "---") return;
-            navigator.clipboard.writeText(text).then(() => {
-                // Kopyalandığını hissettirmek için ufak bir animasyon/renk değişimi yapılabilir ama şimdilik alert vermiyoruz, sadece kopyalıyor.
-            });
+        function selectStrat(type) {
+            const s = allData.strategies[type];
+            const panel = document.getElementById('activeTradePanel');
+            const details = document.getElementById('tradeDetails');
+            
+            panel.style.display = 'block';
+            activeTargetPrice = s.price;
+            
+            details.innerHTML = `
+                ${s.pair} | ${s.action}<br>
+                GİRİŞ: ${s.price}<br>
+                HEDEF: ${s.tp}<br>
+                STOP: ${s.sl}
+            `;
+            
+            // Otonom döngüyü başlat
+            startGozcuDöngüsü(s.pair, s.price);
+        }
+
+        function startGozcuDöngüsü(pair, target) {
+            document.getElementById('priceAlert').innerText = "Gözcü pusuda, fiyat bekleniyor...";
+            
+            // Bu kısım gerçek veriye bağlandığında tetiklenir
+            // Simülasyon: 10 saniye sonra uyarı ver
+            setTimeout(() => {
+                document.getElementById('alertSound').play();
+                document.getElementById('priceAlert').innerHTML = "🚨 UYAN KOMUTANIM! <br> Fiyat pusu seviyesine geldi!";
+                document.body.style.background = "#400";
+                setTimeout(() => document.body.style.background = "#0b0e11", 2000);
+            }, 10000);
         }
     </script>
 </body>
