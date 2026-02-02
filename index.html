@@ -7,21 +7,15 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; color: #e9eaeb; margin: 0; padding: 10px; }
         .panel { background: #1e2329; border-radius: 12px; padding: 15px; border: 1px solid #333; margin-bottom: 10px; }
-        
-        /* Kriter Kutuları */
         .radar-box { border-left: 4px solid #f0b90b; background: #2b2f36; padding: 12px; margin-bottom: 10px; border-radius: 0 8px 8px 0; }
         .preparation-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: #888; margin-bottom: 5px; }
-        
-        /* Hazırlık Çubukları */
         .progress-container { height: 8px; background: #111; border-radius: 4px; overflow: hidden; margin-top: 5px; }
         .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 2s ease-in-out; }
-
-        /* Varyant Kartları */
         .strategy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .strat-card { background: #000; padding: 10px; border-radius: 8px; font-size: 0.75rem; border: 1px solid #444; position: relative; min-height: 65px; }
+        .strat-card { background: #000; padding: 10px; border-radius: 8px; font-size: 0.75rem; border: 1px solid #444; position: relative; min-height: 70px; overflow: hidden; }
         
-        /* Kart Altındaki Sarı Hazırlık Çizgisi */
-        .mini-progress { height: 5px; background: #333; position: absolute; bottom: 0; left: 0; width: 0%; background: #f0b90b; transition: 2s ease-in-out; border-radius: 0 0 8px 8px; }
+        /* ÖNEMLİ: Sarı Hazırlık Çizgisi Ayarı */
+        .mini-progress { height: 6px; background: #f0b90b; position: absolute; bottom: 0; left: 0; width: 0%; transition: width 2.5s cubic-bezier(0.1, 0.7, 1.0, 0.1); border-radius: 0 0 8px 8px; box-shadow: 0 0 10px rgba(240, 185, 11, 0.5); }
 
         .active-trade { border: 2px solid #27ae60; background: #0c2d1a; display: none; }
         textarea { width: 100%; background: #2b2f36; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; box-sizing: border-box; min-height: 90px; margin-top: 10px; }
@@ -55,11 +49,6 @@
             </div>
         </div>
 
-        <div id="pusuKutusu" class="panel active-trade">
-            <h3 style="margin:0; color:#27ae60;">🚨 PUSU TETİKLENDİ!</h3>
-            <div id="pusuDetay" style="font-family: monospace; font-size: 1.1rem; margin-top:10px;"></div>
-        </div>
-
         <textarea id="emir" placeholder="1000 dolarım var ne yapabilirim"></textarea>
         <button id="mainBtn" onclick="harekatiBaslat()">HAREKATI BAŞLAT</button>
     </div>
@@ -68,7 +57,7 @@
         async function harekatiBaslat() {
             const btn = document.getElementById('mainBtn');
             const q = document.getElementById('emir').value;
-            btn.innerText = "VERİLER İŞLENİYOR...";
+            btn.innerText = "ORDU HAREKET EDİYOR...";
             
             try {
                 const res = await fetch('/api/gemini-ask', {
@@ -78,7 +67,7 @@
                 });
                 const data = await res.json();
 
-                // 1. Üst Listeyi Güncelle (Zincirleme)
+                // 1. Üst Listeyi Güncelle
                 const liste = document.getElementById('kriterListesi');
                 const yeniKriter = `
                     <div class="radar-box">
@@ -93,28 +82,22 @@
                     </div>`;
                 liste.innerHTML = yeniKriter + liste.innerHTML;
 
-                // 2. KARTLARI VE SARI ÇİZGİLERİ SENKRONİZE ET
-                // Scalp Senkronu
+                // 2. KARTLARI VE ÇUBUKLARI ZORLA HAREKET ETTİR (style.width ile doğrudan müdahale)
+                // SCALP
                 document.getElementById('sc_info').innerHTML = `${data.strategies.scalp.pair}<br>G: ${data.strategies.scalp.price}`;
-                document.getElementById('sc_bar').style.width = data.move_stage + "%";
+                setTimeout(() => {
+                    document.getElementById('sc_bar').style.width = data.move_stage + "%";
+                }, 100);
 
-                // Günlük Senkronu
+                // GÜNLÜK
                 document.getElementById('dy_info').innerHTML = `${data.strategies.day.pair}<br>G: ${data.strategies.day.price}`;
-                document.getElementById('dy_bar').style.width = (data.move_stage * 0.9) + "%"; 
-
-                // 3. Pusu Tetikleme (%90 ve üzeri hazırlıkta)
-                if(data.move_stage >= 90) {
-                    const pusu = document.getElementById('pusuKutusu');
-                    pusu.style.display = 'block';
-                    document.getElementById('pusuDetay').innerHTML = `
-                        ${data.strategies.scalp.pair} | ${data.strategies.scalp.action}<br>
-                        GİRİŞ: ${data.strategies.scalp.price} | HEDEF: ${data.strategies.scalp.tp}
-                    `;
-                }
+                setTimeout(() => {
+                    document.getElementById('dy_bar').style.width = (data.move_stage * 0.95) + "%";
+                }, 100);
 
                 btn.innerText = "HAREKATI BAŞLAT";
             } catch (e) { 
-                btn.innerText = "BAĞLANTI HATASI";
+                btn.innerText = "HATA OLUŞTU";
             }
         }
     </script>
