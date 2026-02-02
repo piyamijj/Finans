@@ -8,21 +8,24 @@
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; color: #e9eaeb; margin: 0; padding: 10px; }
         .panel { background: #1e2329; border-radius: 12px; padding: 15px; border: 1px solid #333; margin-bottom: 10px; }
         
+        /* Kriter Kutuları */
         .radar-box { border-left: 4px solid #f0b90b; background: #2b2f36; padding: 12px; margin-bottom: 10px; border-radius: 0 8px 8px 0; }
         .preparation-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: #888; margin-bottom: 5px; }
         
+        /* Hazırlık Çubukları */
         .progress-container { height: 8px; background: #111; border-radius: 4px; overflow: hidden; margin-top: 5px; }
         .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 2s ease-in-out; }
 
+        /* Varyant Kartları */
         .strategy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .strat-card { background: #000; padding: 10px; border-radius: 8px; font-size: 0.7rem; border: 1px solid #444; position: relative; min-height: 50px; }
+        .strat-card { background: #000; padding: 10px; border-radius: 8px; font-size: 0.75rem; border: 1px solid #444; position: relative; min-height: 65px; }
         
-        /* Kart Altındaki Sarf/Hazırlık Çizgisi */
-        .mini-progress { height: 4px; background: #333; position: absolute; bottom: 0; left: 0; width: 0%; background: #f0b90b; transition: 1.5s; border-radius: 0 0 8px 8px; }
+        /* Kart Altındaki Sarı Hazırlık Çizgisi */
+        .mini-progress { height: 5px; background: #333; position: absolute; bottom: 0; left: 0; width: 0%; background: #f0b90b; transition: 2s ease-in-out; border-radius: 0 0 8px 8px; }
 
         .active-trade { border: 2px solid #27ae60; background: #0c2d1a; display: none; }
-        textarea { width: 100%; background: #2b2f36; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; box-sizing: border-box; min-height: 90px; margin-top: 10px; font-size: 0.9rem; }
-        button { width: 100%; padding: 15px; background: #f0b90b; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem; }
+        textarea { width: 100%; background: #2b2f36; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; box-sizing: border-box; min-height: 90px; margin-top: 10px; }
+        button { width: 100%; padding: 15px; background: #f0b90b; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -37,15 +40,15 @@
         <div class="panel">
             <h3 style="margin:0 0 10px 0; font-size: 1rem;">🎯 VARYANT HAZIRLIKLARI</h3>
             <div class="strategy-grid">
-                <div class="strat-card" id="sc_card">
+                <div class="strat-card">
                     <b>SCALP</b><br><span id="sc_info">Bekleniyor...</span>
                     <div id="sc_bar" class="mini-progress"></div>
                 </div>
-                <div class="strat-card" id="dy_card">
+                <div class="strat-card">
                     <b>GÜNLÜK</b><br><span id="dy_info">Bekleniyor...</span>
                     <div id="dy_bar" class="mini-progress"></div>
                 </div>
-                <div class="strat-card" id="sw_card">
+                <div class="strat-card">
                     <b>HAFTALIK</b><br><span id="sw_info">-</span>
                     <div id="sw_bar" class="mini-progress"></div>
                 </div>
@@ -59,14 +62,13 @@
 
         <textarea id="emir" placeholder="1000 dolarım var ne yapabilirim"></textarea>
         <button id="mainBtn" onclick="harekatiBaslat()">HAREKATI BAŞLAT</button>
-        <div id="bilanco" style="text-align:center; margin-top:10px; font-size:0.8rem; color:#27ae60;">GÜNLÜK BİLANÇO: $0.00</div>
     </div>
 
     <script>
         async function harekatiBaslat() {
             const btn = document.getElementById('mainBtn');
             const q = document.getElementById('emir').value;
-            btn.innerText = "ORDU HAZIRLANIYOR...";
+            btn.innerText = "VERİLER İŞLENİYOR...";
             
             try {
                 const res = await fetch('/api/gemini-ask', {
@@ -76,7 +78,7 @@
                 });
                 const data = await res.json();
 
-                // 1. Üst Listeye Ekle (Zincirleme)
+                // 1. Üst Listeyi Güncelle (Zincirleme)
                 const liste = document.getElementById('kriterListesi');
                 const yeniKriter = `
                     <div class="radar-box">
@@ -91,14 +93,16 @@
                     </div>`;
                 liste.innerHTML = yeniKriter + liste.innerHTML;
 
-                // 2. Kartları ve Giriş Değerlerini Doldur
+                // 2. KARTLARI VE SARI ÇİZGİLERİ SENKRONİZE ET
+                // Scalp Senkronu
                 document.getElementById('sc_info').innerHTML = `${data.strategies.scalp.pair}<br>G: ${data.strategies.scalp.price}`;
                 document.getElementById('sc_bar').style.width = data.move_stage + "%";
 
+                // Günlük Senkronu
                 document.getElementById('dy_info').innerHTML = `${data.strategies.day.pair}<br>G: ${data.strategies.day.price}`;
-                document.getElementById('dy_bar').style.width = (data.move_stage * 0.8) + "%";
+                document.getElementById('dy_bar').style.width = (data.move_stage * 0.9) + "%"; 
 
-                // 3. Pusu Tetikleme Kontrolü
+                // 3. Pusu Tetikleme (%90 ve üzeri hazırlıkta)
                 if(data.move_stage >= 90) {
                     const pusu = document.getElementById('pusuKutusu');
                     pusu.style.display = 'block';
@@ -110,8 +114,7 @@
 
                 btn.innerText = "HAREKATI BAŞLAT";
             } catch (e) { 
-                btn.innerText = "HATA: TEKRAR DENE";
-                console.error(e); 
+                btn.innerText = "BAĞLANTI HATASI";
             }
         }
     </script>
