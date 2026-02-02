@@ -3,105 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeOS - Piyami Baba Radarı</title>
+    <title>LifeOS Finans Radarı v2.0 - Pro</title>
     <style>
-        :root { --bg: #05070a; --card: #12161c; --gold: #f0b90b; --buy: #2ecc71; --sell: #3498db; --danger: #e74c3c; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 12px; }
+        :root { --bg: #05070a; --gold: #f0b90b; --buy: #2ecc71; --sell: #3498db; --danger: #e74c3c; --wait: #ffffff; --yellow: #f1c40f; }
+        body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; margin: 0; padding: 15px; }
         
-        /* Defterdeki 2 Satırlı Radar Yapısı */
-        .radar-box { border-left: 4px solid var(--gold); padding-left: 12px; margin-bottom: 20px; }
-        .line-1 { font-size: 0.85rem; color: #888; display: block; }
-        .line-2 { font-size: 1.1rem; font-weight: bold; display: block; margin-top: 2px; }
+        /* Defterdeki 2 Satırlı ve Numaralı Yapı */
+        .radar-entry { border-left: 5px solid var(--gold); padding: 10px; margin-bottom: 20px; background: #0e1217; border-radius: 0 8px 8px 0; }
+        .roma-num { font-weight: bold; color: var(--gold); margin-right: 10px; }
+        .line-top { font-size: 1.1rem; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .line-bottom { font-size: 0.9rem; display: block; margin-top: 5px; }
 
-        /* Renk Kodları (Deftere Sadık) */
-        .white { color: #ffffff; } 
-        .green { color: var(--buy); } /* Alış ve Kâr */
-        .blue { color: var(--sell); } /* Satış */
-        .danger { color: var(--danger); animation: pusu-blink 0.8s infinite; }
+        /* Defterdeki Renk Mantığı */
+        .status-wait { color: var(--wait); }
+        .status-warn { color: var(--yellow); }
+        .status-danger { color: var(--danger); animation: pulse 0.5s infinite; }
+        .status-buy { color: var(--buy); font-weight: bold; }
+        .status-sell { color: var(--sell); font-weight: bold; }
+        .status-done { color: #333; } /* Siyah/Gri: Biten iş */
 
-        .panel { background: var(--card); border-radius: 12px; padding: 15px; border: 1px solid #2a3039; margin-bottom: 15px; }
-        
-        /* Grafik Alanı (Defterdeki Çizim Hatları) */
-        .spark-graph { height: 40px; border-bottom: 1px solid #333; margin: 10px 0; position: relative; }
-        .spark-graph::after { content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-        textarea { width: 100%; background: #1a1e23; color: #fff; border: 1px solid #333; border-radius: 8px; padding: 10px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        
-        @keyframes pusu-blink { 50% { opacity: 0.3; } }
+        .dashboard { max-width: 600px; margin: auto; }
+        .stats-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; font-size: 0.8rem; background: #1a1e23; padding: 15px; border-radius: 10px; }
+        button { width: 100%; padding: 18px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; }
+        textarea { width: 100%; height: 80px; background: #12161c; color: #fff; border: 1px solid #333; border-radius: 10px; padding: 10px; margin-top: 10px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
-    <div class="panel">
-        <h3 style="color:var(--gold); margin:0 0 10px 0;">🛰️ PİYAMİ FİNANS RADARI</h3>
-        <div class="radar-box">
-            <span class="line-1">Küresel Tarama & Jeopolitik Hat</span>
-            <span class="line-2 white" id="r_main">Pusu İçin Emir Bekleniyor...</span>
+    <h2 style="color:var(--gold); text-align:center; letter-spacing: 2px;">🛰️ PİYAMİ RADAR PRO</h2>
+    
+    <div id="radarContainer">
+        <div class="radar-entry">
+            <span class="line-top"><span class="roma-num">I.</span> <span id="pair_name">RADAR TARANIYOR...</span></span>
+            <span class="line-bottom status-wait" id="risk_val">Beklenen Sıçrama: %0.00</span>
         </div>
     </div>
 
-    <div class="panel" id="pusuPanel" style="display:none; border-color: var(--gold);">
-        <span class="line-1">Görülecek İşlem (2 Satır)</span>
-        <div class="radar-box" style="border-left-color: var(--sell);">
-            <span class="line-2" id="p_pair">---</span>
-            <span class="line-2" id="p_detail">---</span>
-        </div>
-        <div class="spark-graph"></div> <div id="alertTxt" style="font-weight:bold; margin-top:5px;"></div>
+    <div class="radar-entry" id="pusuBox" style="display:none; border-color: var(--buy);">
+        <span class="line-top" id="p_action">PUSU NOKTASI</span>
+        <span class="line-bottom" id="p_targets">Giriş: -- | Hedef: -- | Stop: --</span>
     </div>
 
-    <textarea id="taskInput" placeholder="Baba, pusu yerini tarif et..."></textarea>
-    <button onclick="calis()">OPERASYONU BAŞLAT</button>
+    <textarea id="userInput" placeholder="Baba, bugünkü rızık planını başlat..."></textarea>
+    <button onclick="operasyonuBaslat()">OPERASYONU BAŞLAT</button>
 
-    <div style="display:flex; justify-content:space-between; padding:10px; font-size:0.8rem; color:#666;">
-        <span>GÜNLÜK GELİR: <b class="green" id="d_pnl">$0.00</b></span>
-        <span>HAFIZA: <b>LifeOS Aktif</b></span>
+    <div class="stats-box">
+        <div>GÜNLÜK GELİR: <b class="status-buy" id="daily_pnl">$0.00</b></div>
+        <div>YILLIK HAFIZA: <b id="yearly_pnl">LifeOS AKTİF</b></div>
     </div>
 </div>
 
 <audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
 <script>
-    async function calis() {
-        const q = document.getElementById('taskInput').value;
-        const mainLine = document.getElementById('r_main');
-        mainLine.innerText = "ARAŞTIRILIYOR...";
-
+    async function operasyonuBaslat() {
+        const msg = document.getElementById('userInput').value;
+        const mainLine = document.getElementById('pair_name');
+        const riskLine = document.getElementById('risk_val');
+        
+        mainLine.innerText = "YAMYAMLAR İZLENİYOR...";
+        
         try {
             const res = await fetch('/api/gemini-ask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: q })
+                body: JSON.stringify({ question: msg })
             });
             const data = await res.json();
 
-            // Defterdeki 2 satırlı radar güncellemesi
-            mainLine.innerText = data.radar_v1 || "Analiz Tamam";
-            mainLine.className = "line-2 " + (data.radar_color || "white");
+            // Matematiksel ve Görsel Dağılım
+            mainLine.innerText = data.radar_v1;
+            riskLine.innerText = data.radar_v2;
+            riskLine.className = "line-bottom " + data.radar_color;
 
-            // Pusu kartı detayları
-            document.getElementById('pusuPanel').style.display = 'block';
-            document.getElementById('p_pair').innerText = data.pusu.pair;
-            document.getElementById('p_detail').innerText = data.pusu.action;
-            document.getElementById('p_detail').className = "line-2 " + data.pusu.color_code;
+            // Pusu Panelini Güncelle (Defterdeki Gibi)
+            const pBox = document.getElementById('pusuBox');
+            pBox.style.display = 'block';
+            pBox.style.borderColor = data.pusu.color_code === 'status-buy' ? '#2ecc71' : '#3498db';
+            document.getElementById('p_action').innerText = data.pusu.pair + " - " + data.pusu.action;
+            document.getElementById('p_detail').className = data.pusu.color_code;
+            document.getElementById('p_targets').innerText = `G: ${data.pusu.price} | H: ${data.pusu.tp} | S: ${data.pusu.sl}`;
 
-            // Sesli ve görsel uyarılar (2 Bip)
-            if(data.radar_color === 'danger-zone') {
-                playBeep(2);
-                document.getElementById('alertTxt').innerHTML = "<span class='danger'>🚨 RİSK ANALİZİ: Sıçrama Kapıda!</span>";
+            // 2 Bip Sesi (Tehlike Anı)
+            if(data.radar_color === 'status-danger') {
+                playAlert(2);
             } else {
-                playBeep(1);
-                document.getElementById('alertTxt').innerHTML = "<span class='green'>✅ Pusu Noktası Stabil.</span>";
+                playAlert(1);
             }
-        } catch(e) { mainLine.innerText = "HATA: Tekrar Dene"; }
+
+        } catch(e) { mainLine.innerText = "BAĞLANTI HATASI!"; }
     }
 
-    function playBeep(n) {
-        let c = 0;
-        const iv = setInterval(() => {
-            document.getElementById('beep').play();
-            c++; if(c>=n) clearInterval(iv);
+    function playAlert(n) {
+        let i = 0;
+        const beep = document.getElementById('beep');
+        const interval = setInterval(() => {
+            beep.play();
+            i++;
+            if(i >= n) clearInterval(interval);
         }, 400);
     }
 </script>
