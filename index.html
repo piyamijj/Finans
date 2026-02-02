@@ -3,123 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piyami LifeOS Otonom Terminal v2</title>
+    <title>LifeOS Otonom Muharebe Terminali</title>
     <style>
-        body { font-family: sans-serif; background: #0b0e11; color: #e9eaeb; margin: 0; padding: 10px; }
-        .dashboard { display: grid; grid-template-columns: 1fr; gap: 10px; max-width: 600px; margin: auto; }
-        .panel { background: #1e2329; border-radius: 10px; padding: 15px; border: 1px solid #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; color: #e9eaeb; margin: 0; padding: 10px; }
+        .panel { background: #1e2329; border-radius: 12px; padding: 15px; border: 1px solid #333; margin-bottom: 10px; }
         
-        /* Defterdeki 2 Satırlı Roma Rakamlı Yapı */
-        .radar-box { border-left: 4px solid #f0b90b; background: #2b2f36; padding: 12px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .radar-left { border-right: 1px solid #444; padding-right: 10px; }
-        .radar-right { color: #f0b90b; font-weight: bold; }
-        
-        /* Grafik Şeridi */
-        .progress-container { height: 6px; background: #111; border-radius: 3px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { height: 100%; width: 0%; background: #27ae60; transition: 1.5s ease-in-out; }
+        /* Defterdeki 2 Satırlı Yapı ve Hazırlık Barı */
+        .radar-box { border-left: 4px solid #f0b90b; background: #2b2f36; padding: 12px; margin-bottom: 10px; }
+        .preparation-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: #888; margin-bottom: 5px; }
+        .progress-container { height: 8px; background: #111; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 2s ease-in-out; }
 
-        .strategy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; }
-        .strat-card { background: #000; padding: 8px; border-radius: 5px; font-size: 0.7rem; text-align: center; cursor: pointer; border: 1px solid #444; }
-        .active-trade { border: 2px solid #27ae60; background: #0c2d1a; margin-top: 10px; display: none; }
-        button { width: 100%; padding: 12px; background: #f0b90b; color: #000; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        textarea { width: 100%; background: #2b2f36; color: #fff; border: 1px solid #444; border-radius: 5px; margin-top: 10px; padding: 10px; box-sizing: border-box; min-height: 80px; }
+        .strategy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .strat-card { background: #000; padding: 10px; border-radius: 8px; font-size: 0.75rem; border: 1px solid #444; position: relative; }
+        
+        /* Kart Altındaki Küçük Hazırlık Barı */
+        .mini-progress { height: 3px; background: #333; position: absolute; bottom: 0; left: 0; width: 0%; background: #f0b90b; transition: 1s; }
+
+        .active-trade { border: 2px solid #27ae60; background: #0c2d1a; display: none; }
+        textarea { width: 100%; background: #2b2f36; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; min-height: 80px; }
+        button { width: 100%; padding: 15px; background: #f0b90b; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
+    <div style="max-width: 600px; margin: auto;">
         <div class="panel">
-            <h2 style="color:#f0b90b; margin:0;">🛰️ PİYAMİ RADAR PRO</h2>
-            <div id="globalStatus" style="font-size: 0.8rem; margin: 10px 0; color: #999;">Radar taranıyor...</div>
+            <h2 style="color:#f0b90b; margin:0;">🛰️ PİYAMİ MUHAREBE RADARI</h2>
+            <div id="statusText" style="font-size: 0.8rem; margin: 10px 0; color: #aaa;">Radar taranıyor...</div>
             
-            <div class="radar-box">
-                <div class="radar-left">
-                    <small style="color:#888;">I. ANA ANALİZ (SOL)</small>
-                    <div id="r_main_val" style="margin-top:5px;">Bekleniyor...</div>
+            <div id="kriterListesi">
                 </div>
-                <div class="radar-right">
-                    <small style="color:#888;">SAĞ ONAY</small>
-                    <div id="r_confirm_val" style="margin-top:5px;">-- : --</div>
-                </div>
-            </div>
-            
-            <div class="progress-container">
-                <div id="moveBar" class="progress-bar"></div>
-            </div>
-            <div id="moveStatus" style="font-size: 0.65rem; color: #666; text-align: right;">Hareket Seviyesi: %0</div>
         </div>
 
         <div class="panel">
-            <h3 style="margin:0;">🎯 OTONOM VARYANTLAR</h3>
-            <div class="strategy-grid" id="stratGrid">
-                <div class="strat-card" onclick="selectStrat('scalp')"><b>SCALP</b><br><span id="sc_pair">-</span></div>
-                <div class="strat-card" onclick="selectStrat('day')"><b>GÜNLÜK</b><br><span id="dy_pair">-</span></div>
-                <div class="strat-card" onclick="selectStrat('swing')"><b>HAFTALIK</b><br><span id="sw_pair">-</span></div>
+            <h3 style="margin:0 0 10px 0;">🎯 VARYANT HAZIRLIKLARI</h3>
+            <div class="strategy-grid">
+                <div class="strat-card"><b>SCALP</b><br><span id="sc_pair">-</span><div id="sc_bar" class="mini-progress"></div></div>
+                <div class="strat-card"><b>GÜNLÜK</b><br><span id="dy_pair">-</span><div id="dy_bar" class="mini-progress"></div></div>
+                <div class="strat-card"><b>HAFTALIK</b><br><span id="sw_pair">-</span><div id="sw_bar" class="mini-progress"></div></div>
             </div>
         </div>
 
-        <div id="activeTradePanel" class="panel active-trade">
-            <h3 style="margin:0; color:#27ae60;">⚡ AKTİF PUSU</h3>
-            <div id="tradeDetails" style="font-family: monospace; font-size: 1.1rem; margin-top:10px;"></div>
-            <div id="priceAlert" style="color:#f0b90b; font-weight:bold; margin-top:10px;"></div>
+        <div id="pusuKutusu" class="panel active-trade">
+            <h3 style="margin:0; color:#27ae60;">🚨 PUSU TETİKLENDİ!</h3>
+            <div id="pusuDetay" style="font-family: monospace; font-size: 1.1rem; margin-top:10px;"></div>
         </div>
 
-        <textarea id="question" placeholder="1000 dolarım var, ne yapabilirim?"></textarea>
-        <button id="mainBtn" onclick="runOtonom()">OPERASYONU BAŞLAT</button>
-        <div id="profitHafiza" style="font-size: 0.75rem; color: #888; margin-top: 10px; text-align: center;">GÜNLÜK BİLANÇO: $0.00</div>
+        <textarea id="emir" placeholder="1000 doları hangi cepheye sürelim?"></textarea>
+        <button onclick="harekatiBaslat()">HAREKATI BAŞLAT</button>
+        <div id="bilanco" style="text-align:center; margin-top:10px; font-size:0.8rem; color:#27ae60;">GÜNLÜK BİLANÇO: $0.00</div>
     </div>
 
-    <audio id="alertSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
     <script>
-        let allData = {};
+        let bilanco = 0;
 
-        async function runOtonom() {
-            const q = document.getElementById('question').value;
-            const btn = document.getElementById('mainBtn');
-            btn.innerText = "ARAŞTIRILIYOR...";
-            
+        async function harekatiBaslat() {
+            const q = document.getElementById('emir').value;
             try {
                 const res = await fetch('/api/gemini-ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question: q })
                 });
-                allData = await res.json();
+                const data = await res.json();
 
-                // 1. Radar ve Defterdeki Sağ-Sol Onayı
-                document.getElementById('globalStatus').innerText = allData.global_status;
-                document.getElementById('r_main_val').innerText = allData.radar_v1;
-                document.getElementById('r_confirm_val').innerText = allData.radar_v2;
+                // 1. Yeni Kriteri (Orduyu) Listeye Ekle (Eskiyi silmeden)
+                const liste = document.getElementById('kriterListesi');
+                const yeniKriter = `
+                    <div class="radar-box">
+                        <div class="preparation-label">
+                            <span>${data.radar_v1}</span>
+                            <b style="color:#f0b90b;">${data.radar_v2}</b>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${data.move_stage}%"></div>
+                        </div>
+                        <div style="font-size: 0.65rem; text-align: right; margin-top:3px;">Hazırlık Seviyesi: %${data.move_stage}</div>
+                    </div>`;
+                liste.innerHTML = yeniKriter + liste.innerHTML; // Yeni olanı en üste ekle
 
-                // 2. Grafik Şeridi (Hareket Seviyesi)
-                const bar = document.getElementById('moveBar');
-                bar.style.width = allData.move_stage + "%";
-                document.getElementById('moveStatus').innerText = "Hareket Seviyesi: %" + allData.move_stage;
+                // 2. Varyant Çubuklarını Doldur
+                document.getElementById('sc_pair').innerText = data.strategies.scalp.pair;
+                document.getElementById('sc_bar').style.width = "75%"; // Scalp hızlı hazırdır
 
-                // 3. Varyantları Doldur
-                document.getElementById('sc_pair').innerText = allData.strategies.scalp.pair;
-                document.getElementById('dy_pair').innerText = allData.strategies.day.pair;
-                document.getElementById('sw_pair').innerText = allData.strategies.swing.pair;
+                document.getElementById('dy_pair').innerText = data.strategies.day.pair;
+                document.getElementById('dy_bar').style.width = "40%"; // Günlük orta
 
-                btn.innerText = "RADAR AKTİF";
-            } catch (e) { btn.innerText = "HATA: TEKRAR DENE"; }
-        }
+                // 3. Eğer Hazırlık %100 ise Pusuya At (Tetikle)
+                if(data.move_stage >= 95) {
+                    const pusu = document.getElementById('pusuKutusu');
+                    pusu.style.display = 'block';
+                    document.getElementById('pusuDetay').innerHTML = `
+                        ${data.strategies.scalp.pair} | BUY <br>
+                        GİRİŞ: ${data.strategies.scalp.price} | HEDEF: ${data.strategies.scalp.tp}
+                    `;
+                    new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+                }
 
-        function selectStrat(type) {
-            const s = allData.strategies[type];
-            const panel = document.getElementById('activeTradePanel');
-            panel.style.display = 'block';
-            document.getElementById('tradeDetails').innerHTML = `
-                ${s.pair} | ${s.action}<br>
-                GİRİŞ: ${s.price}<br>
-                HEDEF: ${s.tp}<br>
-                STOP: ${s.sl}
-            `;
-            
-            // 2 Bip Sesi (Baba Onayı)
-            const snd = document.getElementById('alertSound');
-            snd.play(); setTimeout(() => snd.play(), 500);
+            } catch (e) { console.error(e); }
         }
     </script>
 </body>
