@@ -3,96 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piyami Muharebe Terminali v6</title>
+    <title>Piyami LifeOS - Elit 5'li & Yedek Güç</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; color: #e9eaeb; margin: 0; padding: 10px; }
-        .panel { background: #1e2329; border-radius: 12px; padding: 15px; border: 1px solid #333; margin-bottom: 10px; }
-        .radar-box { border-left: 4px solid #f0b90b; background: #2b2f36; padding: 12px; margin-bottom: 10px; border-radius: 0 8px 8px 0; }
-        .progress-container { height: 8px; background: #111; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 2s ease-in-out; }
+        .panel { background: #1e2329; border-radius: 12px; padding: 15px; border: 1px solid #333; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         
-        /* Kartlar ve Tıklama Özelliği */
-        .strategy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .strat-card { background: #000; padding: 10px; border-radius: 8px; font-size: 0.75rem; border: 1px solid #444; position: relative; min-height: 75px; cursor: pointer; transition: 0.3s; }
-        .strat-card:hover { border-color: #f0b90b; background: #111; }
+        /* Değerli Beşli Listesi */
+        .radar-box { border-left: 4px solid #f0b90b; background: #252930; padding: 10px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 0.8rem; position: relative; }
+        .radar-box.new-item { animation: highlight 1s ease-out; border-left-color: #27ae60; }
         
-        .mini-progress { height: 6px; background: #f0b90b; position: absolute; bottom: 0; left: 0; width: 0%; transition: width 2s ease-in-out; border-radius: 0 0 8px 8px; }
+        .progress-container { height: 6px; background: #111; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f0b90b, #e67e22); transition: width 1.5s ease-in-out; }
 
-        .active-trade { border: 2px solid #27ae60; background: #0c2d1a; display: none; margin-top: 10px; }
+        /* Varyant Kartları ve Yedek Slot */
+        .strategy-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; } /* Scalp biraz daha geniş */
+        
+        .strat-card { background: #000; padding: 10px; border-radius: 8px; font-size: 0.75rem; border: 1px solid #444; position: relative; min-height: 80px; cursor: pointer; overflow: hidden; }
+        .strat-card:hover { border-color: #f0b90b; }
+
+        /* Ana ve Yedek Scalp Düzeni */
+        .scalp-layout { display: flex; justify-content: space-between; align-items: center; }
+        .backup-badge { font-size: 0.6rem; background: #333; padding: 2px 5px; border-radius: 4px; color: #aaa; }
+        
+        .mini-progress { height: 5px; background: #f0b90b; position: absolute; bottom: 0; left: 0; width: 0%; transition: width 2s ease-in-out; border-radius: 0 0 8px 8px; box-shadow: 0 0 8px rgba(240, 185, 11, 0.4); }
+
+        .active-trade { border: 2px solid #27ae60; background: #0c2d1a; display: none; margin-top: 10px; padding: 15px; }
         textarea { width: 100%; background: #2b2f36; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; box-sizing: border-box; min-height: 80px; margin-top: 10px; }
-        button { width: 100%; padding: 15px; background: #f0b90b; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button { width: 100%; padding: 15px; background: #f0b90b; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem; }
+
+        @keyframes highlight { from { background: #27ae60; } to { background: #252930; } }
     </style>
 </head>
 <body>
 
     <div style="max-width: 600px; margin: auto;">
+        
         <div class="panel">
-            <h2 style="color:#f0b90b; margin:0; font-size: 1.2rem;">🛰️ PİYAMİ MUHAREBE RADARI</h2>
-            <div id="kriterListesi"></div>
+            <h2 style="color:#f0b90b; margin:0; font-size: 1.1rem; display:flex; justify-content:space-between;">
+                <span>🛰️ DEĞERLİ 5'Lİ RADAR</span>
+                <span style="font-size:0.7rem; color:#666; font-weight:normal; margin-top:4px;">Canlı Kapasite: 5/5</span>
+            </h2>
+            <div id="kriterListesi" style="margin-top:10px;"></div>
         </div>
 
         <div class="panel">
-            <h3 style="margin:0 0 10px 0; font-size: 1rem;">🎯 VARYANT HAZIRLIKLARI (Detay için tıkla)</h3>
+            <h3 style="margin:0 0 10px 0; font-size: 1rem;">🎯 LIVEBOARD (Ana & Yedek)</h3>
             <div class="strategy-grid">
+                
                 <div class="strat-card" onclick="detayGoster('scalp')">
-                    <b>SCALP</b><br><span id="sc_info">Bekleniyor...</span>
+                    <div class="scalp-layout">
+                        <b style="color:#fff;">SCALP</b>
+                        <span class="backup-badge">YEDEK: HAZIR</span>
+                    </div>
+                    
+                    <div style="margin-top:5px; font-size:0.9rem; color:#f0b90b;" id="sc_main">Bekleniyor...</div>
+                    <div style="font-size:0.65rem; color:#888; margin-top:2px;" id="sc_backup">Alt: --</div>
+
                     <div id="sc_bar" class="mini-progress"></div>
                 </div>
+
                 <div class="strat-card" onclick="detayGoster('day')">
-                    <b>GÜNLÜK</b><br><span id="dy_info">Bekleniyor...</span>
+                    <b>GÜNLÜK</b><br>
+                    <span id="dy_info" style="font-size:0.8rem;">-</span>
                     <div id="dy_bar" class="mini-progress"></div>
                 </div>
+
                 <div class="strat-card" onclick="detayGoster('swing')">
-                    <b>HAFTALIK</b><br><span id="sw_info">-</span>
+                    <b>HAFTALIK</b><br>
+                    <span id="sw_info" style="font-size:0.8rem;">-</span>
                     <div id="sw_bar" class="mini-progress"></div>
                 </div>
             </div>
         </div>
 
         <div id="pusuKutusu" class="panel active-trade">
-            <h3 id="pusuBaslik" style="margin:0; color:#27ae60;">⚡ AKTİF PUSU DETAYI</h3>
-            <div id="pusuDetay" style="font-family: monospace; font-size: 1.1rem; margin-top:10px;"></div>
+            <h3 style="margin:0; color:#27ae60;">⚡ OPERASYON EMRİ</h3>
+            <div id="pusuDetay" style="font-family: monospace; font-size: 1rem; margin-top:10px; line-height: 1.4;"></div>
         </div>
 
-        <textarea id="emir" placeholder="1000 dolarım var ne yapabilirim"></textarea>
-        <button id="mainBtn" onclick="harekatiBaslat()">HAREKATI BAŞLAT</button>
+        <textarea id="emir" placeholder="1000 dolarım var, en iyileri bul..."></textarea>
+        <button id="mainBtn" onclick="harekatiBaslat()">EN İYİLERİ GETİR</button>
     </div>
 
     <script>
         let sonVeri = null;
+        const MAX_ITEMS = 5; // Değerli Beşli Limiti
 
         async function harekatiBaslat() {
+            const btn = document.getElementById('mainBtn');
             const q = document.getElementById('emir').value;
+            btn.innerText = "PİYASA TARANIYOR...";
+            
             try {
                 const res = await fetch('/api/gemini-ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question: q })
                 });
-                sonVeri = await res.json();
+                sonVeri = await res.json(); // Güncel veriyi hafızaya al
 
-                // 1. Radar Listesi
+                // 1. DEĞERLİ BEŞLİ LİSTESİNİ YÖNET (ÇÖPLÜĞE İZİN YOK)
                 const liste = document.getElementById('kriterListesi');
-                liste.innerHTML = `
-                    <div class="radar-box">
-                        <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                            <span>${sonVeri.radar_v1}</span>
-                            <b style="color:#f0b90b;">${sonVeri.radar_v2}</b>
-                        </div>
-                        <div class="progress-container"><div class="progress-bar" style="width: ${sonVeri.move_stage}%"></div></div>
-                    </div>` + liste.innerHTML;
-
-                // 2. Kartları Doldur ve Çubukları Hareket Ettir
-                document.getElementById('sc_info').innerHTML = `${sonVeri.strategies.scalp.pair}<br>G: ${sonVeri.strategies.scalp.price}`;
-                document.getElementById('dy_info').innerHTML = `${sonVeri.strategies.day.pair}<br>G: ${sonVeri.strategies.day.price}`;
                 
-                // Çubukları uyandır
+                // Yeni eleman oluştur
+                const yeniKutu = document.createElement('div');
+                yeniKutu.className = 'radar-box new-item';
+                yeniKutu.innerHTML = `
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>${sonVeri.radar_v1}</span>
+                        <b style="color:#f0b90b;">${sonVeri.radar_v2}</b>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${sonVeri.move_stage}%"></div>
+                    </div>`;
+
+                // En başa ekle
+                liste.insertBefore(yeniKutu, liste.firstChild);
+
+                // Eğer 5'ten fazlaysa, en alttaki (en eski) zayıf halkayı at
+                if(liste.children.length > MAX_ITEMS) {
+                    liste.removeChild(liste.lastChild);
+                }
+
+                // 2. LIVEBOARD: ANA VE YEDEK KUVVETLERİ DOLDUR
+                // Scalp: Ana Parite
+                document.getElementById('sc_main').innerHTML = `${sonVeri.strategies.scalp.pair} <span style="color:#fff;">| ${sonVeri.strategies.scalp.price}</span>`;
+                
+                // Scalp: Yedek Parite (Simülasyon: Ana paritenin tersi veya alternatifi)
+                // Gerçek senaryoda API'den 2. seçenek de istenebilir. Şimdilik varyasyon yapıyoruz.
+                let backupPair = sonVeri.strategies.scalp.pair === "EUR/USD" ? "GBP/USD" : "XAU/USD";
+                document.getElementById('sc_backup').innerText = `Alt: ${backupPair} (Hazır)`;
+
+                // Günlük ve Haftalık
+                document.getElementById('dy_info').innerText = `${sonVeri.strategies.day.pair} | ${sonVeri.strategies.day.price}`;
+                document.getElementById('sw_info').innerText = sonVeri.strategies.swing.pair;
+
+                // 3. ÇUBUKLARI CANLANDIR (SENKRONİZE)
                 setTimeout(() => {
                     document.getElementById('sc_bar').style.width = sonVeri.move_stage + "%";
-                    document.getElementById('dy_bar').style.width = (sonVeri.move_stage * 0.9) + "%";
-                }, 200);
+                    document.getElementById('dy_bar').style.width = (sonVeri.move_stage * 0.85) + "%";
+                    document.getElementById('sw_bar').style.width = (sonVeri.move_stage * 0.5) + "%";
+                }, 100);
 
-            } catch (e) { alert("Hata!"); }
+                // Otomatik Pusu Uyarısı (Hazırlık %90 üstüyse)
+                if(sonVeri.move_stage >= 90) {
+                    detayGoster('scalp'); // Direkt Scalp detayını aç
+                }
+
+                btn.innerText = "YENİLE (DEĞERLİ 5'Lİ)";
+            } catch (e) { 
+                btn.innerText = "HATA: TEKRAR DENE"; 
+                console.error(e);
+            }
         }
 
         function detayGoster(tip) {
@@ -100,11 +162,18 @@
             const s = sonVeri.strategies[tip];
             const kutu = document.getElementById('pusuKutusu');
             kutu.style.display = 'block';
+            
+            // Eğer Scalp seçildiyse yedeği de not olarak düş
+            let not = "";
+            if(tip === 'scalp') not = "<br><span style='color:#888; font-size:0.8rem;'>*Yedek kuvvet (Alt) girişe hazır.</span>";
+
             document.getElementById('pusuDetay').innerHTML = `
-                ${s.pair} | ${s.action}<br>
-                GİRİŞ: ${s.price}<br>
-                HEDEF: ${s.tp}<br>
-                STOP: ${s.sl}
+                <span style="color:#f0b90b; font-weight:bold;">${s.pair}</span> | ${s.action}<br>
+                ----------------<br>
+                GİRİŞ : ${s.price}<br>
+                HEDEF : ${s.tp}<br>
+                STOP  : ${s.sl}
+                ${not}
             `;
             kutu.scrollIntoView({ behavior: 'smooth' });
         }
