@@ -2,109 +2,97 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeOS Finans Radarı v2.0 - Pro</title>
+    <title>Piyami Radar - Aşama 1 (Matematiksel Onay)</title>
     <style>
-        :root { --bg: #05070a; --gold: #f0b90b; --buy: #2ecc71; --sell: #3498db; --danger: #e74c3c; --wait: #ffffff; --yellow: #f1c40f; }
-        body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; margin: 0; padding: 15px; }
+        :root { --bg: #05070a; --gold: #f0b90b; --buy: #2ecc71; --sell: #3498db; --danger: #e74c3c; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; }
+        .panel { background: #11151a; border-radius: 10px; padding: 12px; border: 1px solid #2a3039; margin-bottom: 15px; }
         
-        /* Defterdeki 2 Satırlı ve Numaralı Yapı */
-        .radar-entry { border-left: 5px solid var(--gold); padding: 10px; margin-bottom: 20px; background: #0e1217; border-radius: 0 8px 8px 0; }
-        .roma-num { font-weight: bold; color: var(--gold); margin-right: 10px; }
-        .line-top { font-size: 1.1rem; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .line-bottom { font-size: 0.9rem; display: block; margin-top: 5px; }
+        /* 2 Satırlı ve Onay Mekanizmalı Yapı */
+        .radar-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-left: 4px solid var(--gold); padding-left: 10px; }
+        .data-box { display: flex; flex-direction: column; border-right: 1px solid #222; }
+        .label { font-size: 0.75rem; color: #666; }
+        .value { font-size: 1rem; font-weight: bold; }
 
-        /* Defterdeki Renk Mantığı */
-        .status-wait { color: var(--wait); }
-        .status-warn { color: var(--yellow); }
-        .status-danger { color: var(--danger); animation: pulse 0.5s infinite; }
-        .status-buy { color: var(--buy); font-weight: bold; }
-        .status-sell { color: var(--sell); font-weight: bold; }
-        .status-done { color: #333; } /* Siyah/Gri: Biten iş */
+        /* Zaman Endeksli Grafik Şeridi */
+        .time-graph { height: 30px; background: #0a0d11; margin-top: 8px; position: relative; overflow: hidden; border-radius: 4px; }
+        .progress-bar { height: 100%; width: 0%; transition: width 1s; } /* İşlemin neresindeyiz? */
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-
-        .dashboard { max-width: 600px; margin: auto; }
-        .stats-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; font-size: 0.8rem; background: #1a1e23; padding: 15px; border-radius: 10px; }
-        button { width: 100%; padding: 18px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; }
-        textarea { width: 100%; height: 80px; background: #12161c; color: #fff; border: 1px solid #333; border-radius: 10px; padding: 10px; margin-top: 10px; box-sizing: border-box; }
+        .status-buy { background: var(--buy); } .status-sell { background: var(--sell); }
+        button { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="dashboard">
-    <h2 style="color:var(--gold); text-align:center; letter-spacing: 2px;">🛰️ PİYAMİ RADAR PRO</h2>
-    
-    <div id="radarContainer">
-        <div class="radar-entry">
-            <span class="line-top"><span class="roma-num">I.</span> <span id="pair_name">RADAR TARANIYOR...</span></span>
-            <span class="line-bottom status-wait" id="risk_val">Beklenen Sıçrama: %0.00</span>
+<div style="max-width: 500px; margin: auto;">
+    <h3 style="color:var(--gold);">🛰️ PİYAMİ RADAR (DENEME MODU)</h3>
+
+    <div class="panel">
+        <div class="radar-row">
+            <div class="data-box">
+                <span class="label">SCALP (ANA)</span>
+                <span class="value" id="s1_val">Bekleniyor...</span>
+            </div>
+            <div class="data-box" style="border:none;">
+                <span class="label">RİSK ONAYI (SAĞ)</span>
+                <span class="value" id="s1_confirm">-- : --</span>
+            </div>
         </div>
+        <div class="time-graph"><div id="s1_progress" class="progress-bar"></div></div>
+        <span id="s1_status" style="font-size: 0.7rem; color: #444;">Hareket: Henüz Başlamadı</span>
     </div>
 
-    <div class="radar-entry" id="pusuBox" style="display:none; border-color: var(--buy);">
-        <span class="line-top" id="p_action">PUSU NOKTASI</span>
-        <span class="line-bottom" id="p_targets">Giriş: -- | Hedef: -- | Stop: --</span>
+    <div class="panel">
+        <div class="radar-row" style="border-left-color: var(--sell);">
+            <div class="data-box">
+                <span class="label">GÜNLÜK (ANA)</span>
+                <span class="value" id="d1_val">Veri Yok</span>
+            </div>
+            <div class="data-box" style="border:none;">
+                <span class="label">2. GÜNLÜK ONAY</span>
+                <span class="value" id="d1_confirm">Pasif</span>
+            </div>
+        </div>
+        <div class="time-graph"><div id="d1_progress" class="progress-bar"></div></div>
     </div>
 
-    <textarea id="userInput" placeholder="Baba, bugünkü rızık planını başlat..."></textarea>
-    <button onclick="operasyonuBaslat()">OPERASYONU BAŞLAT</button>
+    <button onclick="analizEt()">OPERASYONU TETİKLE</button>
 
-    <div class="stats-box">
-        <div>GÜNLÜK GELİR: <b class="status-buy" id="daily_pnl">$0.00</b></div>
-        <div>YILLIK HAFIZA: <b id="yearly_pnl">LifeOS AKTİF</b></div>
+    <div style="font-size: 0.8rem; margin-top: 15px; color: #888;">
+        SONUÇ HAFIZASI (P/L): <b id="history" style="color:#fff;">$0.00</b>
     </div>
 </div>
 
-<audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
 <script>
-    async function operasyonuBaslat() {
-        const msg = document.getElementById('userInput').value;
-        const mainLine = document.getElementById('pair_name');
-        const riskLine = document.getElementById('risk_val');
+    let pnlHafiza = 0;
+
+    async function analizEt() {
+        // Simülasyon: Asistan pusuya bakar
+        document.getElementById('s1_val').innerText = "EUR/USD 1.0850";
+        document.getElementById('s1_confirm').innerText = "ONAY BEKLENİYOR...";
         
-        mainLine.innerText = "YAMYAMLAR İZLENİYOR...";
-        
-        try {
-            const res = await fetch('/api/gemini-ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: msg })
-            });
-            const data = await res.json();
-
-            // Matematiksel ve Görsel Dağılım
-            mainLine.innerText = data.radar_v1;
-            riskLine.innerText = data.radar_v2;
-            riskLine.className = "line-bottom " + data.radar_color;
-
-            // Pusu Panelini Güncelle (Defterdeki Gibi)
-            const pBox = document.getElementById('pusuBox');
-            pBox.style.display = 'block';
-            pBox.style.borderColor = data.pusu.color_code === 'status-buy' ? '#2ecc71' : '#3498db';
-            document.getElementById('p_action').innerText = data.pusu.pair + " - " + data.pusu.action;
-            document.getElementById('p_detail').className = data.pusu.color_code;
-            document.getElementById('p_targets').innerText = `G: ${data.pusu.price} | H: ${data.pusu.tp} | S: ${data.pusu.sl}`;
-
-            // 2 Bip Sesi (Tehlike Anı)
-            if(data.radar_color === 'status-danger') {
-                playAlert(2);
-            } else {
-                playAlert(1);
-            }
-
-        } catch(e) { mainLine.innerText = "BAĞLANTI HATASI!"; }
+        setTimeout(() => {
+            // Sağ taraftaki onay mekanizması çalıştı
+            document.getElementById('s1_confirm').innerText = "GÜVENLİ (%1.2)";
+            document.getElementById('s1_confirm').style.color = "#2ecc71";
+            
+            // Grafik hareketleniyor
+            const prog = document.getElementById('s1_progress');
+            prog.className = "progress-bar status-buy";
+            prog.style.width = "40%"; 
+            document.getElementById('s1_status').innerText = "GÖREV: Hareket Yeni Başladı (Yeşil Mod)";
+            document.getElementById('s1_status').style.color = "#2ecc71";
+            
+            // 2 Bip sesi uyarısı
+            const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+            audio.play(); setTimeout(() => audio.play(), 500);
+        }, 2000);
     }
 
-    function playAlert(n) {
-        let i = 0;
-        const beep = document.getElementById('beep');
-        const interval = setInterval(() => {
-            beep.play();
-            i++;
-            if(i >= n) clearInterval(interval);
-        }, 400);
+    // Stop veya Kar durumunda hafızaya yazma fonksiyonu
+    function islemKapat(miktar) {
+        pnlHafiza += miktar;
+        document.getElementById('history').innerText = (pnlHafiza >= 0 ? "+" : "") + "$" + pnlHafiza.toFixed(2);
     }
 </script>
 </body>
