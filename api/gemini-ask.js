@@ -1,131 +1,121 @@
 export const config = { runtime: 'edge' };
 
-// OANDA Practice API Adresi (Canlı hesap için link değişir, şu an practice modundayız)
+// OANDA Practice API (Canlı için link değişir)
 const OANDA_URL = "https://api-fxpractice.oanda.com/v3";
 
-// 1. OANDA'dan Fiyat Verisi Çeken Fonksiyon (Mum Grafiği)
-async function getOandaPrice(pair, token) {
-    try {
-        // H1 (1 Saatlik) grafikten son 5 mumu çekiyoruz
-        const response = await fetch(`${OANDA_URL}/instruments/${pair}/candles?count=5&granularity=H1&price=M`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
-        return data;
-    } catch (e) {
-        return null;
-    }
+// --- YARDIMCI ARAÇLAR ---
+
+// 1. Telegram Mesajı Gönderme
+async function sendTelegram(text, token, chatId) {
+    if (!token || !chatId) return;
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: "Markdown" })
+    });
 }
 
-// 2. OANDA'dan Hesap Bakiyesi Çeken Fonksiyon
+// 2. Fiyat Çekme (Genişletilmiş Liste)
+async function getOandaPrice(pair, token) {
+    try {
+        // H4 (4 Saatlik) mumlara bakarak daha sağlam trendleri görsün
+        const response = await fetch(`${OANDA_URL}/instruments/${pair}/candles?count=10&granularity=H4&price=M`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    } catch (e) { return null; }
+}
+
+// 3. Hesap Bakiyesi
 async function getAccountSummary(token, accountId) {
     try {
         const response = await fetch(`${OANDA_URL}/accounts/${accountId}/summary`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.json();
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
 export default async function handler(req) {
     try {
-        const { question } = await req.json();
+        // Hem POST (Siteden) hem GET (Zamanlayıcıdan/Cron) isteği kabul etsin
+        const body = req.method === 'POST' ? await req.json() : {};
+        const question = body.question || "Genel piyasa taraması yap ve fırsat varsa bildir.";
+        const isCron = req.headers.get('Authorization') === `Bearer ${process.env.CRON_SECRET}`; // Güvenlik için
 
-        // .env dosyasındaki değişkenleri alıyoruz
         const oandaKey = process.env.OANDA_API_KEY;
         const oandaAccount = process.env.OANDA_ACCOUNT_ID;
         const geminiKey = process.env.GEMINI_API_KEY;
+        const tgToken = process.env.TELEGRAM_BOT_TOKEN;
+        const tgChat = process.env.TELEGRAM_CHAT;
 
-        // --- ADIM 1: GERÇEK VERİLERİ TOPLA ---
-        
-        // Hesap Bakiyesi
-        const accData = await getAccountSummary(oandaKey, oandaAccount);
-        const balance = accData?.account?.balance || "Bilinmiyor";
-        const marginAvail = accData?.account?.marginAvailable || "0";
+        // --- 1. GENİŞ İSTİHBARAT AĞI ---
+        // Daha fazla enstrüman ekledik:
+        const targets = ["EUR_USD", "XAU_USD", "USD_JPY", "GBP_USD", "BTC_USD"];
+        let marketData = "";
 
-        // Parite Verileri (OANDA sembol formatı: EUR_USD)
-        const eurData = await getOandaPrice("EUR_USD", oandaKey);
-        const goldData = await getOandaPrice("XAU_USD", oandaKey);
-        const jpyData = await getOandaPrice("USD_JPY", oandaKey);
-
-        // Mum verisini okunabilir metne çeviren yardımcı
-        const parseCandle = (d) => {
-            if (!d || !d.candles || d.candles.length === 0) return "Veri alınamadı";
-            const last = d.candles[d.candles.length - 1]; // Son mum
-            return `Kapanış: ${last.mid.c}, En Yüksek: ${last.mid.h}, En Düşük: ${last.mid.l}`;
-        };
-
-        const technicalReport = `
-        [HESAP DURUMU]
-        Bakiye: ${balance} USD
-        Kullanılabilir Marjin: ${marginAvail} USD
-
-        [PİYASA VERİLERİ (Son 1 Saatlik Mum)]
-        EUR/USD: ${parseCandle(eurData)}
-        XAU/USD (ALTIN): ${parseCandle(goldData)}
-        USD/JPY: ${parseCandle(jpyData)}
-        `;
-
-        // --- ADIM 2: GEMINI'YE RAPOR SUN VE EMİR AL ---
-        
-        const brokerPrompt = `
-        KİMLİK: Sen 'Piyami LifeOS', seçkin bir finansal operasyon yapay zekasısın. 
-        MİSYON: Aşağıdaki GERÇEK TEKNİK VERİLERİ analiz et ve kullanıcıya para kazandıracak stratejiler üret.
-
-        SAHA RAPORU:
-        ${technicalReport}
-
-        KULLANICI SORUSU: "${question}"
-
-        GÖREVLER:
-        1. Kullanıcının bakiyesini (${balance} USD) dikkate alarak risk yönetimi yap.
-        2. Scalp, Günlük ve Swing işlemleri için XAU/USD, EUR/USD veya USD/JPY arasından fırsat bul.
-        3. Trend yönüne göre (Buy/Sell) net fiyatlar ver.
-
-        ÇIKTI FORMATI (SADECE SAF JSON, YORUM YOK):
-        {
-            "global_status": "Kısa piyasa yorumu ve bakiye durumu (Örn: Komutanım, 10.000$ bakiyemiz hazır. Altın direnci zorluyor.)",
-            "radar_elements": ["XAU/USD (Yükseliş Trendi)", "USD/JPY (Düzeltme Bekleniyor)"],
-            "strategies": {
-                "scalp": {"pair": "EUR/USD", "action": "SELL", "price": "1.0850", "tp": "1.0820", "sl": "1.0870"},
-                "day": {"pair": "USD/JPY", "action": "BUY", "price": "150.20", "tp": "151.00", "sl": "149.80"},
-                "swing": {"pair": "XAU/USD", "action": "BUY", "price": "2035", "tp": "2080", "sl": "2010"}
+        // Tüm hedeflerin verisini çek
+        for (const t of targets) {
+            const data = await getOandaPrice(t, oandaKey);
+            if (data && data.candles && data.candles.length > 0) {
+                const last = data.candles[data.candles.length - 1];
+                marketData += `${t}: Son=${last.mid.c} (Açılış=${last.mid.o}) | `;
             }
+        }
+
+        const acc = await getAccountSummary(oandaKey, oandaAccount);
+        const balance = acc?.account?.balance || "???";
+
+        // --- 2. GEMINI ANALİZİ ---
+        const prompt = `
+        KİMLİK: Piyami LifeOS Otonom Finans Asistanı.
+        DURUM: Hesap Bakiyesi ${balance} USD.
+        
+        PİYASA VERİLERİ (H4 Mumları):
+        ${marketData}
+        
+        GÖREV:
+        1. Verileri analiz et. Trendi güçlü olan (net yükseliş veya düşüş) pariteleri seç.
+        2. ${balance} USD bakiye ile güvenli bir "Giriş", "Stop" ve "Hedef" noktası belirle.
+        3. Eğer çok net bir fırsat yoksa "Nöbetçiler beklemede" de.
+        
+        ÇIKTI (JSON):
+        {
+            "global_status": "Piyasa özeti (Tek cümle)",
+            "radar_elements": ["Fırsat Görülen 1. Parite", "Riskli Görülen Parite"],
+            "strategies": {
+                "scalp": {"pair": "...", "action": "BUY/SELL", "price": "...", "tp": "...", "sl": "..."},
+                "day": {"pair": "...", "action": "...", "price": "...", "tp": "...", "sl": "..."},
+                "swing": {"pair": "...", "action": "...", "price": "...", "tp": "...", "sl": "..."}
+            },
+            "telegram_message": "Komutanım, ${balance}$ cephane ile tarama bitti. XAU_USD paritesinde YÜKSELİŞ tespit edildi. Giriş önerisi: ..."
         }`;
 
-        // Gemini API Çağrısı
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+        const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: brokerPrompt }] }] })
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
 
-        const apiData = await response.json();
-        let rawText = apiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        
-        // Markdown temizliği (```json ... ``` kısımlarını siler)
-        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+        const gData = await gRes.json();
+        let text = gData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        const result = JSON.parse(text);
 
-        return new Response(rawText, { headers: { 'Content-Type': 'application/json' } });
+        // --- 3. TELEGRAM TETİKLEME (EVRİM) ---
+        // Eğer bu işlem bir "Cron Job" ise veya siteden özellikle istendiyse Telegram at.
+        // Şimdilik sitedeki butona basınca da analiz raporunu Telegram'a atacak şekilde ayarladım.
+        if (tgToken && tgChat) {
+            // Basit rapor
+            await sendTelegram(`📡 *PİYAMİ RADAR RAPORU*\n\n${result.telegram_message}`, tgToken, tgChat);
+            
+            // İLERİ SEVİYE: İşlem Linki (Henüz aktif değil, mantığı göstermek için)
+            // await sendTelegram(`[İŞLEMİ ONAYLA: ${result.strategies.scalp.pair} ${result.strategies.scalp.action}](https://senin-site.com/api/trade?action=buy)`, tgToken, tgChat);
+        }
+
+        return new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json' } });
 
     } catch (e) {
-        return new Response(JSON.stringify({ 
-            global_status: "HATA: OANDA bağlantısı kurulamadı. API Keyleri kontrol edin.",
-            radar_elements: ["Veri Yok"],
-            strategies: {
-                scalp: {pair: "-", action: "-", price: "-", tp: "-", sl: "-"},
-                day: {pair: "-", action: "-", price: "-", tp: "-", sl: "-"},
-                swing: {pair: "-", action: "-", price: "-", tp: "-", sl: "-"}
-            },
-            error_detail: e.message 
-        }), { headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
 }
