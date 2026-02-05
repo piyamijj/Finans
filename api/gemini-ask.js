@@ -5,7 +5,7 @@ export default async function handler(req) {
         const { question, strategy } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. CANLI PÄ°YASA VERÄ°LERÄ°NÄ° Ã‡EK
+        // 1. CANLI PİYASA VERİLERİNİ ÇEK
         const marketRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await marketRes.json();
         const r = data.rates;
@@ -19,16 +19,16 @@ export default async function handler(req) {
         };
 
         const brokerPrompt = `
-        KÄ°MLÄ°K: Sen Piyami LifeOS Otonom Finans OperatÃ¶rÃ¼sÃ¼n. 
-        GÃ–REVÄ°N: PiyasayÄ± tara, riskli elementleri belirle ve 3 farklÄ± varyantta (Scalp, Day, Swing) pusu noktalarÄ± oluÅŸtur.
+        KİMLİK: Sen Piyami LifeOS Otonom Finans Operatörüsün. 
+        GÖREVİN: Piyasayı tara, riskli elementleri belirle ve 3 farklı varyantta (Scalp, Day, Swing) pusu noktaları oluştur.
         
-        VERÄ°LER: USD/TRY: ${pairs.usdTry}, EUR/USD: ${pairs.eurUsd}, GOLD: ${pairs.gold}
+        VERİLER: USD/TRY: ${pairs.usdTry}, EUR/USD: ${pairs.eurUsd}, GOLD: ${pairs.gold}
         SORU: "${question}"
 
-        Ã‡IKTIYI SADECE SAF JSON OLARAK VER:
+        ÇIKTIYI SADECE SAF JSON OLARAK VER:
         {
-            "global_status": "Piyasa genel durum Ã¶zeti (Ä°ran-TR hattÄ± dahil)",
-            "radar_elements": ["USD/JPY (Riskli)", "ALTIN (SÄ±Ã§rama Bekleniyor)"],
+            "global_status": "Piyasa genel durum özeti (İran-TR hattı dahil)",
+            "radar_elements": ["USD/JPY (Riskli)", "ALTIN (Sıçrama Bekleniyor)"],
             "strategies": {
                 "scalp": {"pair": "EUR/USD", "action": "BUY", "price": "1.1860", "tp": "1.1890", "sl": "1.1840"},
                 "day": {"pair": "USD/JPY", "action": "SELL", "price": "155.10", "tp": "154.00", "sl": "155.50"},
